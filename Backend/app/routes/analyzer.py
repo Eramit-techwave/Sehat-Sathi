@@ -2,23 +2,27 @@ from fastapi import APIRouter, HTTPException, status
 from google import genai
 from google.genai import types
 from app.config import settings
+from app.database import reports_collection # 1. Reports collection ko import kiya
 from pydantic import BaseModel
-import json  # String ko Python dictionary me badalne ke liye
+from datetime import datetime # 2. Timestamp lagane ke liye import
+import json
 
 router = APIRouter(
     prefix="/analyze",
-    tags=["AI Report Analyzer"]
+    tags=["AI Report Analyzer & History"]
 )
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 class ReportInput(BaseModel):
+    # Testing ke liye hum user_id abhi body me le rahe hain, 
+    # baad me ise security token se auto-fetch karenge.
+    user_id: str 
     report_text: str
 
 @router.post("/text")
 async def analyze_report_text(data: ReportInput):
     try:
-        # Strict Prompt with required JSON structure
         medical_prompt = f"""
         You are 'Sehat-Sathi AI'. Analyze this medical report text and output strictly as a JSON object.
         Do NOT write any introduction or conclusion. Do NOT use markdown code blocks like ```json.
@@ -31,15 +35,15 @@ async def analyze_report_text(data: ReportInput):
                     "name": "Parameter Name",
                     "value": "Value with unit",
                     "status": "NORMAL or WARNING or CRITICAL",
-                    "explanation": "Simple common-man explanation of what this parameter does",
-                    "finding": "What is wrong or right with this specific parameter"
+                    "explanation": "Simple common-man explanation",
+                    "finding": "What is wrong or right"
                 }}
             ],
             "recommendations": {{
-                "diet": ["bullet point 1", "bullet point 2"],
-                "lifestyle": ["bullet point 1", "bullet point 2"]
+                "diet": ["bullet point 1"],
+                "lifestyle": ["bullet point 1"]
             }},
-            "disclaimer": "Strict medical disclaimer text"
+            "disclaimer": "Medical disclaimer text"
         }}
 
         Raw Report Text:
@@ -51,28 +55,58 @@ async def analyze_report_text(data: ReportInput):
             contents=medical_prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,
-                # AI ko force kar rahe hain JSON generate karne ke liye
                 response_mime_type="application/json" 
             )
         )
         
-        # Gemini ke string response ko pure Python JSON/Dictionary me parse kar rahe hain
         clean_json_output = json.loads(response.text)
+        
+        # 3. Database Document taiyar kar rahe hain
+        report_document = {
+            "user_id": data.user_id,
+            "raw_text": data.report_text,
+            "ai_analysis": clean_json_output,
+            "created_at": datetime.utcnow() # Current date and time lagayi
+        }
+        
+        # 4. MongoDB Atlas Cloud me insert kar rahe hain
+        result = await reports_collection.insert_one(report_document)
         
         return {
             "status": "success",
-            "model_used": "gemini-2.5-flash (Structured JSON Mode)",
+            "report_id": str(result.inserted_id), # Inserted record ki unique ID
+            "model_used": "gemini-2.5-flash (JSON + Saved)",
             "data": clean_json_output
         }
         
-    except json.JSONDecodeError:
-        # Agar AI ne kabhi galat JSON bana diya toh safe recovery
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"AI/DB Error: {str(e)}"
+        )
+
+# 5. NEW ENDPOINT: User ki saari purani reports nikalne ke liye
+@router.get("/history/{user_id}")
+async def get_user_report_history(user_id: str):
+    try:
+        # Database se is particular user ki saari reports nikal rahe hain (Latest first)
+        cursor = reports_collection.find({"user_id": user_id}).sort("created_at", -1)
+        reports = await cursor.to_list(length=100) # Max 100 reports fetch karenge
+        
+        # MongoDB ki native ObjectIDs ko string me convert kar rahe hain taaki JSON fail na ho
+        for r in reports:
+            r["_id"] = str(r["_id"])
+            # Datetime object ko string me format kar rahe hain display ke liye
+            if "created_at" in r:
+                r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                
         return {
-            "status": "partial_success",
-            "raw_analysis": response.text
+            "status": "success",
+            "total_reports": len(reports),
+            "history": reports
         }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Gemini JSON Error: {str(e)}"
+            detail=f"History Fetch Error: {str(e)}"
         )
