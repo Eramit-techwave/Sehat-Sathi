@@ -1,36 +1,33 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 from app.database import connect_to_mongo, close_mongo_connection
-# 1. Auth router ko import kar rahe hain jo humne routes/auth.py me banaya hai
 from app.routes.auth import router as auth_router
+# 1. Naya Import: AI Analyzer router ko import kiya
+from app.routes.analyzer import router as analyzer_router
 
-# Lifespan manager jo startup aur shutdown events handle karta hai
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # ---- STARTUP EVENT ----
-    await connect_to_mongo()
-    
-    yield  # Yahan app chal rahi hai...
-    
-    # ---- SHUTDOWN EVENT ----
-    await close_mongo_connection()
-
-# FastAPI application instance
 app = FastAPI(
-    title="Sehat Sathi API",
-    description="AI Powered Medical Lab Report Analyzer & Health Tracker Backend",
-    version="1.0",
-    lifespan=lifespan
+    title="Sehat-Sathi Backend API",
+    description="Production-ready FastAPI backend with MongoDB Atlas and Gemini AI Integration.",
+    version="1.0.0"
 )
 
-# 2. Router ko Application me include kar rahe hain
-app.include_router(auth_router)
+# Lifespan events database connectivity ke liye
+@app.on_event("startup")
+async def startup_db_client():
+    await connect_to_mongo()
 
-# Home route testing ke liye
-@app.get("/")
-def home():
-    return {
-        "status": "success",
-        "message": "Welcome to Sehat Sathi Backend API!",
-        "version": "1.0"
-    }
+@app.on_event("shutdown")
+async def shutdown_db_client():
+    await close_mongo_connection()
+
+# Root test endpoint
+@app.on_event("startup")
+def welcome_message():
+    print("🚀 Sehat-Sathi Application layer initialized successfully!")
+
+@app.get("/", tags=["Root"])
+def read_root():
+    return {"message": "Welcome to Sehat-Sathi Backend API System!"}
+
+# 2. Routers Integration
+app.include_router(auth_router)
+app.include_router(analyzer_router) # Naya Router include kiya
