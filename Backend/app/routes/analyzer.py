@@ -2,9 +2,9 @@ from fastapi import APIRouter, HTTPException, status
 from google import genai
 from google.genai import types
 from app.config import settings
-from app.database import reports_collection # 1. Reports collection ko import kiya
+from app.database import get_db # 1. Naya function import kiya
 from pydantic import BaseModel
-from datetime import datetime # 2. Timestamp lagane ke liye import
+from datetime import datetime
 import json
 
 router = APIRouter(
@@ -15,8 +15,6 @@ router = APIRouter(
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
 class ReportInput(BaseModel):
-    # Testing ke liye hum user_id abhi body me le rahe hain, 
-    # baad me ise security token se auto-fetch karenge.
     user_id: str 
     report_text: str
 
@@ -61,20 +59,23 @@ async def analyze_report_text(data: ReportInput):
         
         clean_json_output = json.loads(response.text)
         
-        # 3. Database Document taiyar kar rahe hain
+        # 2. Direct Function se database aur 'reports' collection fetch kiya
+        db = get_db()
+        reports_collection = db["reports"]
+        
         report_document = {
             "user_id": data.user_id,
             "raw_text": data.report_text,
             "ai_analysis": clean_json_output,
-            "created_at": datetime.utcnow() # Current date and time lagayi
+            "created_at": datetime.utcnow()
         }
         
-        # 4. MongoDB Atlas Cloud me insert kar rahe hain
+        # 3. Insert into database
         result = await reports_collection.insert_one(report_document)
         
         return {
             "status": "success",
-            "report_id": str(result.inserted_id), # Inserted record ki unique ID
+            "report_id": str(result.inserted_id),
             "model_used": "gemini-2.5-flash (JSON + Saved)",
             "data": clean_json_output
         }
@@ -85,18 +86,18 @@ async def analyze_report_text(data: ReportInput):
             detail=f"AI/DB Error: {str(e)}"
         )
 
-# 5. NEW ENDPOINT: User ki saari purani reports nikalne ke liye
 @router.get("/history/{user_id}")
 async def get_user_report_history(user_id: str):
     try:
-        # Database se is particular user ki saari reports nikal rahe hain (Latest first)
-        cursor = reports_collection.find({"user_id": user_id}).sort("created_at", -1)
-        reports = await cursor.to_list(length=100) # Max 100 reports fetch karenge
+        # 4. Yahan bhi function ka use kiya
+        db = get_db()
+        reports_collection = db["reports"]
         
-        # MongoDB ki native ObjectIDs ko string me convert kar rahe hain taaki JSON fail na ho
+        cursor = reports_collection.find({"user_id": user_id}).sort("created_at", -1)
+        reports = await cursor.to_list(length=100)
+        
         for r in reports:
             r["_id"] = str(r["_id"])
-            # Datetime object ko string me format kar rahe hain display ke liye
             if "created_at" in r:
                 r["created_at"] = r["created_at"].strftime("%Y-%m-%d %H:%M:%S")
                 

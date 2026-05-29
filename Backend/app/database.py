@@ -4,15 +4,26 @@ from app.config import settings
 client = None
 db = None
 users_collection = None
-reports_collection = None # 1. Naya handler reports ke liye
+reports_collection = None
+
+def get_db():
+    """Naye analyzer ke liye direct database instance handler"""
+    global client
+    if client is None:
+        client = AsyncIOMotorClient(settings.MONGO_URI)
+    return client[settings.DB_NAME]
 
 async def connect_to_mongo():
+    """Purane auth.py aur main.py ke liye global initialization"""
     global client, db, users_collection, reports_collection
     try:
         client = AsyncIOMotorClient(settings.MONGO_URI)
         db = client[settings.DB_NAME]
         users_collection = db["users"]
-        reports_collection = db["reports"] # 2. Reports table ko map kiya
+        reports_collection = db["reports"]
+        
+        # Connection verification
+        await client.admin.command('ping')
         print("✅ Successfully connected to MongoDB Atlas!")
     except Exception as e:
         print(f"❌ MongoDB connection failed: {e}")
