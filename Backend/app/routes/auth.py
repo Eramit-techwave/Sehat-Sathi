@@ -1,72 +1,72 @@
 from fastapi import APIRouter, HTTPException, status
 from app.models.user import UserCreate
-# Security utilities ko import kar rahe hain
 from app.security import get_password_hash, verify_password, create_access_token
+# 1. Naya Import: database.py se direct db reference ko import kar rahe hain
+from app.database import db
+from datetime import datetime
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
 
-# Mock Database testing ke liye (Global list)
-users_db = []
-
-# 1. SIGNUP ENDPOINT
+# 2. SIGNUP ENDPOINT (Real MongoDB Integration)
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreate):
-    for user in users_db:
-        if user["email"] == user_data.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
+    # MongoDB ke 'users' collection ko access kar rahe hain
+    users_collection = db["users"]
     
+    # Real DB Query: Check kar rahe hain ki kya email pehle se exist karta hai
+    existing_user = await users_collection.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Password ko hash kar rahe hain
     hashed_password = get_password_hash(user_data.password)
     
-    new_user = {
-        "_id": f"mock_id_{len(users_db) + 1}",
+    # MongoDB me save karne ke liye document taiyar kar rahe hain
+    new_user_document = {
         "name": user_data.name,
         "email": user_data.email,
         "password": hashed_password,
+        "created_at": datetime.utcnow(),
+        "is_active": True
     }
     
-    users_db.append(new_user)
+    # Real DB Query: Document ko cloud database me insert kar rahe hain
+    result = await users_collection.insert_one(new_user_document)
+    
     return {
         "status": "success",
-        "message": "User registered successfully with encrypted password!",
-        "user": {
-            "id": new_user["_id"],
-            "name": new_user["name"],
-            "email": new_user["email"]
-        }
+        "message": "User registered successfully in Cloud Database!",
+        "user_id": str(result.inserted_id)  # MongoDB ki unique Object ID wapas bhej rahe hain
     }
 
-# 2. Naya Addition: LOGIN ENDPOINT (POST Request)
+# 3. LOGIN ENDPOINT (Real MongoDB Integration)
 @router.post("/login")
-async def login(login_data: UserCreate): # Testing ke liye hum UserCreate schema hi use kar rahe hain
-    user_found = None
+async def login(login_data: UserCreate):
+    users_collection = db["users"]
     
-    # Database me email dhoondh rahe hain
-    for user in users_db:
-        if user["email"] == login_data.email:
-            user_found = user
-            break
-            
-    # Agar email nahi mila, toh 401 Unauthorized error bhejenge
+    # Real DB Query: User ko uske email se dhoondh rahe hain
+    user_found = await users_collection.find_one({"email": login_data.email})
+    
     if not user_found:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
         
-    # Password verify kar rahe hain (Plain input vs Hashed DB password)
+    # Password verification
     if not verify_password(login_data.password, user_found["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
         )
         
-    # Agar dono sahi hain, toh JWT Token generate kar rahe hain
+    # Token generate kar rahe hain
     token_data = {"sub": user_found["email"], "user_name": user_found["name"]}
     access_token = create_access_token(data=token_data)
     
