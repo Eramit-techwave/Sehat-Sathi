@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from google import genai
 from google.genai import types
 from app.config import settings
-from app.database import get_db # 1. Naya function import kiya
+from app.database import get_db
+from app.routes.auth import get_current_user # 1. Secure auth middleware ko import kiya
 from pydantic import BaseModel
 from datetime import datetime
 import json
@@ -14,12 +15,16 @@ router = APIRouter(
 
 client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
+# 🎯 CHANGED: Ab hume body me user_id lene ki bilkul zaroorat nahi hai!
 class ReportInput(BaseModel):
-    user_id: str 
     report_text: str
 
 @router.post("/text")
-async def analyze_report_text(data: ReportInput):
+async def analyze_report_text(data: ReportInput, current_user: str = Depends(get_current_user)):
+    """
+    Ab ye endpoint secured hai. Bina valid JWT Token ke koi ise hit nahi kar payega.
+    'current_user' ke andar automatic login wale user ka email aa jayega.
+    """
     try:
         medical_prompt = f"""
         You are 'Sehat-Sathi AI'. Analyze this medical report text and output strictly as a JSON object.
@@ -59,41 +64,44 @@ async def analyze_report_text(data: ReportInput):
         
         clean_json_output = json.loads(response.text)
         
-        # 2. Direct Function se database aur 'reports' collection fetch kiya
         db = get_db()
         reports_collection = db["reports"]
         
+        # 2. Database Document me ab static ID ki jagah login user ka email save hoga
         report_document = {
-            "user_id": data.user_id,
+            "user_id": current_user, # Securely fetched from Token!
             "raw_text": data.report_text,
             "ai_analysis": clean_json_output,
             "created_at": datetime.utcnow()
         }
         
-        # 3. Insert into database
         result = await reports_collection.insert_one(report_document)
         
         return {
             "status": "success",
             "report_id": str(result.inserted_id),
-            "model_used": "gemini-2.5-flash (JSON + Saved)",
+            "model_used": "gemini-2.5-flash (JWT Protected)",
             "data": clean_json_output
         }
         
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI/DB Error: {str(e)}"
+            detail=f"AI/DB Secure Error: {str(e)}"
         )
 
-@router.get("/history/{user_id}")
-async def get_user_report_history(user_id: str):
+@router.get("/history") # 🎯 CHANGED: URL se bhi {user_id} hata diya, ab ye automatic chalega
+async def get_user_report_history(current_user: str = Depends(get_current_user)):
+    """
+    User ko koi ID nahi deni padegi. Jis user ka token hoga, 
+    database se sirf USI ka data filter hoke aayega. 100% Secure!
+    """
     try:
-        # 4. Yahan bhi function ka use kiya
         db = get_db()
         reports_collection = db["reports"]
         
-        cursor = reports_collection.find({"user_id": user_id}).sort("created_at", -1)
+        # Jo user logged in hai, sirf uski reports find karo
+        cursor = reports_collection.find({"user_id": current_user}).sort("created_at", -1)
         reports = await cursor.to_list(length=100)
         
         for r in reports:
@@ -109,5 +117,6 @@ async def get_user_report_history(user_id: str):
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"History Fetch Error: {str(e)}"
+            detail=f"Secure History Fetch Error: {str(e)}"
         )
+        
