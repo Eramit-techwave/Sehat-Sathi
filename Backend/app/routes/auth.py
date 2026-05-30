@@ -2,9 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.models.user import UserCreate
 from app.security import get_password_hash, verify_password, create_access_token
-# Hamari security keys config me hain, isliye settings import kiya
 from app.config import settings 
-from app.database import db
+from app.database import get_db # 🎯 Global variable 'db' hata kar dynamic function import kiya
 from datetime import datetime
 import jwt
 
@@ -13,28 +12,22 @@ router = APIRouter(
     tags=["Authentication"]
 )
 
-# Yeh scheme hamare Swagger UI par ek universal 'Authorize' lock button active kar degi
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-
-# 🔐 MIDDLEWARE FUNCTION: Isko hum doosre routes me use karenge
+# 🔐 MIDDLEWARE FUNCTION
 async def get_current_user(token: str = Depends(oauth2_scheme)):
-    """
-    Har secure request ke token ko validation check karega.
-    Token sahi hone par user ki email (sub) return karega.
-    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials, please login again.",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        # settings se SECRET_KEY aur ALGORITHM reading le rahe hain
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        #payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
         user_email: str = payload.get("sub")
         if user_email is None:
             raise credentials_exception
-        return user_email # Validated user email mil gayi!
+        return user_email
     except jwt.PyJWTError:
         raise credentials_exception
 
@@ -42,6 +35,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
 # 1. SIGNUP ENDPOINT
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreate):
+    db = get_db() # 🎯 Dynamic fetch
     users_collection = db["users"]
     
     existing_user = await users_collection.find_one({"email": user_data.email})
@@ -70,12 +64,12 @@ async def signup(user_data: UserCreate):
     }
 
 
-# 2. LOGIN ENDPOINT (Standard OAuth2 Form Based)
+# 2. LOGIN ENDPOINT (Robust Function Integration)
 @router.post("/login")
 async def login(login_data: OAuth2PasswordRequestForm = Depends()):
+    db = get_db() # 🎯 Fixed: Ab ye kabhi 'NoneType' nahi dega!
     users_collection = db["users"]
     
-    # OAuth2 form me username field hi email hoti hai
     user_found = await users_collection.find_one({"email": login_data.username})
     
     if not user_found or not verify_password(login_data.password, user_found["password"]):
