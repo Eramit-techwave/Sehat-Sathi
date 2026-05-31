@@ -1,44 +1,46 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware # CORS import kiya
-from app.database import connect_to_mongo, close_mongo_connection
-from app.routes import auth, analyzer
+from fastapi.middleware.cors import CORSMiddleware
 
+# Internal Architecture Imports
+from app.database import connect_to_mongo, close_mongo_connection
+from app.routes import auth
+from app.config import settings
+
+# 🚀 INITIALIZE FASTAPI APP ENGINE
 app = FastAPI(
-    title="Sehat-Sathi Backend Engine",
-    description="Production-ready secure AI medical diagnostic analyzer API",
+    title="SehatSathi Mesh API Engine",
+    description="Automated Clinical Multimodal Vision Extraction Backend Pipeline",
     version="1.0.0"
 )
 
-# 🔐 CORS MIDDLEWARE SETUP
-# Yeh security layer React app (jo localhost:5173 par chalegi) ko backend se baat karne ki permission deti hai
-origins = [
-    "http://localhost:5173",     # React local development URL
-    "http://127.0.0.1:5173",
-]
-
+# 🌐 CORS MIDDLEWARE CONFIGURATION (Saves from Browser Block)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,           # Sirf hamare frontend ko allow karega
+    allow_origins=["http://localhost:5173"], # React Frontend dev URL
     allow_credentials=True,
-    allow_methods=["*"],             # Saare methods (GET, POST, OPTIONS, etc.) allowed hain
-    allow_headers=["*"],             # Saare headers (Authorization, Content-Type, etc.) allowed hain
+    allow_methods=["*"], # Allow all standard protocols (POST, GET, OPTIONS etc.)
+    allow_headers=["*"], # Allow all configuration validation headers
 )
 
+# 🛰️ LIFECYCLE EVENT HANDLERS
 @app.on_event("startup")
 async def startup_db_client():
+    # Load hook setups and trigger cloud communication linkage
     await connect_to_mongo()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    # Break ongoing pipelines cleanly on server execution termination
     await close_mongo_connection()
 
-# Routers ko include kiya
+# 🔌 CONNECT AUTHENTICATION ROUTER NODE
 app.include_router(auth.router)
-app.include_router(analyzer.router)
 
-@app.get("/")
-async def root():
+# 🗺️ BASE SANITY CHECK ROUTE
+@app.get("/", tags=["Sanity Root Check"])
+def root_check():
     return {
         "status": "online",
-        "message": "Welcome to Sehat-Sathi Secure Core AI Engine API Layer."
+        "framework": "FastAPI Asynchronous Grid",
+        "database_target": settings.DATABASE_NAME
     }

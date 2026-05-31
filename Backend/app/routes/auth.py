@@ -1,87 +1,74 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from app.models.user import UserCreate
-from app.security import get_password_hash, verify_password, create_access_token
-from app.config import settings 
-from app.database import get_db # 🎯 Global variable 'db' hata kar dynamic function import kiya
-from datetime import datetime
-import jwt
+from datetime import timedelta
+from bson import ObjectId
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Authentication"]
-)
+# Internal Imports
+from app.schemas import UserCreate, UserLogin, UserResponse
+from app.database import db # Hamari sync ki hui database script
+from app.auth_utils import hash_password, verify_password, create_access_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+router = APIRouter(prefix="/auth", tags=["Authentication Layer"])
 
-# 🔐 MIDDLEWARE FUNCTION
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials, please login again.",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        #payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.ALGORITHM])
-        user_email: str = payload.get("sub")
-        if user_email is None:
-            raise credentials_exception
-        return user_email
-    except jwt.PyJWTError:
-        raise credentials_exception
-
-
-# 1. SIGNUP ENDPOINT
+# 📝 ROUTE 1: USER REGISTRATION (SIGNUP)
 @router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(user_data: UserCreate):
-    db = get_db() # 🎯 Dynamic fetch
-    users_collection = db["users"]
-    
-    existing_user = await users_collection.find_one({"email": user_data.email})
+    # 1. Check karna ki kya email database me pehle se registered toh nahi hai
+    existing_user = await db["users"].find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
+            detail="Yeh email ID pehle se registered hai node par."
         )
+        
+    # 2. Plain password ko secure hash me convert karna
+    hashed_pwd = hash_password(user_data.password)
     
-    hashed_password = get_password_hash(user_data.password)
-    
-    new_user_document = {
+    # 3. Database me insert karne ke liye document dictionary banana
+    new_user_dict = {
         "name": user_data.name,
         "email": user_data.email,
-        "password": hashed_password,
-        "created_at": datetime.utcnow(),
-        "is_active": True
+        "password": hashed_pwd
     }
     
-    result = await users_collection.insert_one(new_user_document)
+    # 4. Data insert karna MongoDB Cloud Atlas collection me
+    result = await db["users"].insert_one(new_user_dict)
     
+    # 5. Response wapas bhejna frontend ko (Password chhipa kar)
     return {
-        "status": "success",
-        "message": "User registered successfully in Cloud Database!",
+        "success": True,
+        "message": "User architecture node successfully created!",
         "user_id": str(result.inserted_id)
     }
 
-
-# 2. LOGIN ENDPOINT (Robust Function Integration)
+# 🔑 ROUTE 2: USER AUTHENTICATION (LOGIN)
 @router.post("/login")
-async def login(login_data: OAuth2PasswordRequestForm = Depends()):
-    db = get_db() # 🎯 Fixed: Ab ye kabhi 'NoneType' nahi dega!
-    users_collection = db["users"]
-    
-    user_found = await users_collection.find_one({"email": login_data.username})
-    
-    if not user_found or not verify_password(login_data.password, user_found["password"]):
+async def login(credentials: UserLogin):
+    # 1. User ko dhoondna uski email ID se
+    user = await db["users"].find_one({"email": credentials.email})
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password"
+            detail="Invalid Credentials (Email galat hai)"
         )
         
-    token_data = {"sub": user_found["email"], "user_name": user_found["name"]}
-    access_token = create_access_token(data=token_data)
+    # 2. Password match check karna
+    if not verify_password(credentials.password, user["password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Credentials (Password galat hai)"
+        )
+        
+    # 3. Successful match par secure access token generate karna
+    access_token = create_access_token(data={"sub": str(user["_id"]), "email": user["email"]})
     
+    # 4. Token aur user info wapas frontend ko supply karna
     return {
-        "access_token": access_token,
-        "token_type": "bearer"
+        "success": True,
+        "token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user["_id"]),
+            "name": user["name"],
+            "email": user["email"]
+        }
     }

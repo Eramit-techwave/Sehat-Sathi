@@ -1,304 +1,246 @@
-import React, { useState } from 'react'
-import { Activity, Shield, Key, ArrowRight, Upload, FileText, X, Sparkles, RefreshCw, BarChart3, Heart, Dumbbell, Apple, Scale, Info } from 'lucide-react'
+import { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "./context/AuthContext.jsx";
+import LandingPage from "./pages/LandingPage.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import { Activity, LogOut } from "lucide-react";
 
-function App() {
-  // Navigation & UI States
-  const [isAuthOpen, setIsAuthOpen] = useState(false)
-  const [authMode, setAuthMode] = useState('login')
-  
-  // Interactive Health Panel State (Active Disease Category)
-  const [activeTab, setActiveTab] = useState('diabetes')
+export default function App() {
+  const { user, logout, loading } = useAuth();
+  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // Form Control States
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [name, setName] = useState('')
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 30);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
-  // Structured Health Intelligence Data Store
-  const healthDatabase = {
-    diabetes: {
-      title: 'Type-2 Diabetes Management Protocol',
-      diet: ['Emphasize complex carbohydrates like oats, quinoa, and brown rice.', 'Incorporate high-fiber vegetables (spinach, broccoli, kale).', 'Strictly avoid refined sugars, processed juices, and high-glycemic fruits.'],
-      exercise: ['30 minutes of moderate brisk walking or cycling daily.', 'Light resistance training 2-3 times a week to improve insulin sensitivity.', 'Monitor glucose parameters pre and post-workout.'],
-      tip: 'Never skip meals; maintain a consistent eating schedule to prevent sudden glycemic spikes.'
-    },
-    hypertension: {
-      title: 'Hypertension & Cardiovascular Care Plan',
-      diet: ['Follow the DASH diet pattern (Rich in fruits, vegetables, and lean protein).', 'Strictly restrict sodium intake to less than 1,500 mg per day.', 'Increase potassium-rich foods like bananas, avocados, and sweet potatoes.'],
-      exercise: ['Aerobic exercises such as swimming, jogging, or light aerobics.', 'Avoid heavy heavy-weight lifting that causes sudden blood pressure spikes.', 'Practice deep breathing or yoga for 15 minutes to regulate autonomic stress.'],
-      tip: 'Check commercial food labels carefully; hidden sodium is heavily present in packaged items.'
-    },
-    thyroid: {
-      title: 'Hypothyroidism Metabolic Optimization',
-      diet: ['Prioritize iodine and selenium-rich options (eggs, dairy, whole grains).', 'Cook goitrogen foods (cabbage, cauliflower, broccoli) thoroughly before eating.', 'Maintain a high-protein baseline to stimulate basal metabolic rates.'],
-      exercise: ['Consistent moderate-intensity cardio to counteract metabolic slowing.', 'Strength training to build lean muscle mass and boost resting energy expenditure.', 'Ensure adequate joint warm-ups as thyroid imbalances can cause joint stiffness.'],
-      tip: 'Take thyroid medication strictly on an empty stomach, at least 30-60 minutes before breakfast.'
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     }
-  }
+  }, [user, loading]);
 
-  const handleAuthSubmit = (e) => {
-    e.preventDefault()
-    alert(`Establishing connection for ${authMode === 'login' ? 'Login' : 'Signup'}...`)
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#030712", display: "flex", alignItems: "center", justifyContent: "center", color: "#60a5fa" }}>
+        <span style={{ fontSize: "14px", fontFamily: "monospace" }}>Synchronizing Health Mesh Security Link...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] text-[#f1f5f9] font-sans antialiased relative overflow-hidden">
-      
-      {/* 🌌 BACKGROUND SYSTEM */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b12_1px,transparent_1px),linear-gradient(to_bottom,#1e293b12_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[600px] bg-gradient-to-b from-blue-500/[0.12] via-indigo-500/[0.02] to-transparent pointer-events-none blur-[140px]" />
-
-      {/* 🌐 NAVBAR */}
-      <nav className="sticky top-0 z-40 backdrop-blur-md bg-[#020617]/80 border-b border-slate-800/60 px-6 md:px-12 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl text-white shadow-lg shadow-blue-500/20">
-            <Activity size={20} className="animate-pulse" />
-          </div>
-          <span className="text-lg font-bold text-white tracking-tight">
-            Sehat<span className="text-blue-400 font-normal">Sathi</span>
-          </span>
-        </div>
+    <div className="app-container">
+      {/* GLOBAL PRODUCTION EMBEDDED STYLES MESH */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
         
-        <div className="flex items-center gap-6">
-          <button onClick={() => { setAuthMode('login'); setIsAuthOpen(true) }} className="text-sm font-medium text-slate-400 hover:text-white transition-colors cursor-pointer">Sign In</button>
-          <button onClick={() => { setAuthMode('signup'); setIsAuthOpen(true) }} className="bg-white hover:bg-slate-200 text-slate-950 text-sm font-semibold py-2 px-4 rounded-xl transition-all active:scale-95 cursor-pointer">Get Started</button>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        .app-container {
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background: #030712;
+          color: #f1f5f9;
+          min-height: 100vh;
+          overflow-x: hidden;
+        }
+
+        .serif { font-family: 'Instrument Serif', Georgia, serif; }
+        
+        button, input, .card-hover, .tab-btn {
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(30px); filter: blur(4px); }
+          to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes pulse-ring {
+          0% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(37,99,235,0.4); }
+          70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(37,99,235,0); }
+          100% { transform: scale(0.98); box-shadow: 0 0 0 0 rgba(37,99,235,0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(0.5deg); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes pulseGlow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
+
+        .fade-up { animation: fadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .fade-up-2 { animation: fadeUp 0.8s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .fade-up-3 { animation: fadeUp 0.8s 0.3s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .fade-up-4 { animation: fadeUp 0.8s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+        .fade-in { animation: fadeIn 0.5s ease both; }
+
+        .shimmer-text {
+          background: linear-gradient(90deg, #60a5fa, #fff, #2563eb, #fff, #60a5fa);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmer 6s linear infinite;
+        }
+
+        .card-hover {
+          background: #0b1329;
+          border: 1px solid rgba(255,255,255,0.03);
+          box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+        }
+        .card-hover:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 20px 40px rgba(37,99,235,0.08);
+          border-color: rgba(37,99,235,0.25);
+          background: #0e1a38;
+        }
+
+        .btn-primary {
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          color: white;
+          border: none;
+          padding: 14px 28px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+          cursor: pointer;
+          box-shadow: 0 8px 20px rgba(37,99,235,0.2);
+        }
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 28px rgba(37,99,235,0.35);
+          background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .btn-primary:active { transform: scale(0.98) translateY(0); }
+
+        .btn-ghost {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255,255,255,0.06);
+          color: #94a3b8;
+          padding: 10px 20px;
+          border-radius: 10px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+        .btn-ghost:hover { 
+          border-color: rgba(96,165,250,0.4); 
+          color: #fff; 
+          background: rgba(37,99,235,0.05); 
+        }
+
+        .input-field {
+          width: 100%;
+          background: #060b16;
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 10px;
+          padding: 14px 16px;
+          color: #e2e8f0;
+          font-size: 14px;
+          outline: none;
+        }
+        .input-field:focus { 
+          border-color: #2563eb; 
+          background: #0a1122;
+          box-shadow: 0 0 15px rgba(37,99,235,0.15);
+        }
+
+        .grid-bg {
+          background-image:
+            linear-gradient(rgba(37,99,235,0.015) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(37,99,235,0.015) 1px, transparent 1px);
+          background-size: 50px 50px;
+        }
+
+        .orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(120px);
+          pointer-events: none;
+          animation: pulseGlow 8s ease-in-out infinite;
+        }
+        
+        .report-line {
+          height: 2px;
+          background: linear-gradient(90deg, transparent, #2563eb, transparent);
+          animation: shimmer 2.5s linear infinite;
+          background-size: 200% auto;
+        }
+        .float-card { animation: float 6s ease-in-out infinite; }
+        .float-card-2 { animation: float 7s 0.7s ease-in-out infinite; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+      `}</style>
+
+      {/* FIXED NAVBAR */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: scrolled ? "rgba(3,7,18,0.75)" : "transparent",
+        backdropFilter: scrolled ? "blur(20px)" : "none",
+        borderBottom: scrolled ? "1px solid rgba(255,255,255,0.04)" : "1px solid transparent",
+        padding: "0 6%", transition: "all 0.2s ease"
+      }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", height: 76 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => navigate("/")}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+              display: "flex", alignItems: "center", justifyContent: "center"
+            }}>
+              <Activity size={18} style={{ color: "white" }} />
+            </div>
+            <span style={{ fontSize: 19, fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em" }}>
+              Sehat<span style={{ color: "#60a5fa", fontWeight: 400 }}>Sathi</span>
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            {user ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#60a5fa" }}>Hi, {user.name}</span>
+                <button className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }} onClick={logout}>
+                  <LogOut size={13} /> Exit Node
+                </button>
+              </div>
+            ) : (
+              /* DYNAMIC EMISSION FOR LANDING ROUTE PATH */
+              location.pathname === "/" && (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {/* These buttons communicate seamlessly with LandingPage instances */}
+                  <button className="btn-ghost" onClick={() => window.dispatchEvent(new Event("trigger-login-modal"))}>Sign In</button>
+                  <button className="btn-primary" style={{ padding: "10px 20px", fontSize: "13px" }} onClick={() => window.dispatchEvent(new Event("trigger-signup-modal"))}>
+                    Get Started
+                  </button>
+                </div>
+              )
+            )}
+          </div>
         </div>
       </nav>
 
-      {/* 🚀 HERO SECTION */}
-      <header className="relative max-w-5xl mx-auto px-6 pt-24 pb-12 flex flex-col items-center text-center z-10">
-        <div className="inline-flex items-center gap-2 bg-blue-950/50 border border-blue-900/40 text-blue-400 text-xs font-medium px-4 py-1.5 rounded-full mb-6 shadow-inner backdrop-blur-sm">
-          <Sparkles size={14} className="text-blue-400" /> Powered by Advanced Vision AI
-        </div>
-        
-        <h1 className="text-4xl md:text-7xl font-black text-white tracking-tight max-w-4xl leading-[1.1] mb-6">
-          Understand your medical reports <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-200 to-blue-500">
-            in plain, simple language
-          </span>
-        </h1>
-        
-        <p className="text-base md:text-lg text-slate-400 max-w-2xl font-normal mb-10 leading-relaxed">
-          Stop guessing your health status. Upload your blood tests, lab reports, or prescriptions and get an instant, clear, and comprehensive smart breakdown.
-        </p>
-
-        <div className="w-full max-w-xs mb-20 relative z-20">
-          <button onClick={() => { setAuthMode('signup'); setIsAuthOpen(true) }} className="group w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 px-6 rounded-xl shadow-xl shadow-blue-500/20 transition-all active:scale-95 cursor-pointer text-sm tracking-wide">
-            Start Analyzing Free
-            <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
-
-        {/* 💻 APPS DASHBOARD GRAPHIC CAPTURE VIEW */}
-        <div className="w-full max-w-4xl bg-[#0b1329]/60 rounded-2xl border border-blue-950/60 p-6 shadow-2xl shadow-black/80 relative overflow-hidden group mb-28 backdrop-blur-md">
-          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
-          
-          <div className="flex items-center justify-between border-b border-blue-950/60 pb-4 mb-6">
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-800" />
-              <span className="w-2.5 h-2.5 rounded-full bg-slate-800" />
-              <span className="text-xs text-slate-400 ml-2 font-medium">AI Analysis Console</span>
-            </div>
-            <div className="flex items-center gap-2 text-[11px] text-blue-400 bg-blue-950/40 px-3 py-1 rounded-full border border-blue-900/40">
-              <RefreshCw size={12} className="animate-spin duration-[4000ms]" /> Processing Document Matrix
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-12 gap-6 items-center">
-            <div className="md:col-span-5 bg-[#040814] border border-slate-900 rounded-xl p-5 h-64 flex flex-col justify-between text-left relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent animate-bounce duration-[3000ms]" />
-              <div className="flex items-center justify-between border-b border-slate-900/60 pb-2">
-                <span className="text-[10px] font-mono text-slate-500">SOURCE_FILE.PDF</span>
-                <FileText size={16} className="text-blue-500" />
-              </div>
-              <div className="space-y-2 opacity-40 py-2">
-                <div className="h-2 bg-slate-800 w-3/4 rounded" />
-                <div className="h-2 bg-slate-800 w-full rounded" />
-                <div className="h-2 bg-slate-800 w-5/6 rounded" />
-              </div>
-              <div className="bg-blue-950/30 border border-blue-900/40 rounded-lg p-3 text-center">
-                <Upload size={20} className="text-blue-400 mx-auto mb-1 animate-pulse" />
-                <span className="text-[11px] text-slate-400 block font-medium">Extracting tabular coordinates...</span>
-              </div>
-            </div>
-
-            <div className="md:col-span-2 text-slate-700 font-mono text-xs flex flex-col items-center justify-center gap-1">
-              <span className="text-blue-500 animate-pulse">➔ ➔ ➔</span>
-            </div>
-
-            <div className="md:col-span-5 bg-[#040814] border border-slate-900 rounded-xl p-5 h-64 flex flex-col justify-between text-left">
-              <div className="flex items-center justify-between border-b border-slate-900/60 pb-2">
-                <span className="text-[10px] font-mono text-blue-400">STRUCTURED_OUTPUT</span>
-                <BarChart3 size={16} className="text-white" />
-              </div>
-              <div className="space-y-3 font-sans my-auto">
-                <div className="p-2.5 bg-blue-950/20 border border-blue-900/30 rounded-lg flex items-center justify-between">
-                  <span className="text-xs text-slate-300">Hemoglobin Level</span>
-                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-semibold">14.5 g/dL (Normal)</span>
-                </div>
-                <div className="p-2.5 bg-slate-900/40 border border-slate-800/40 rounded-lg flex items-center justify-between">
-                  <span className="text-xs text-slate-300">Fasting Blood Sugar</span>
-                  <span className="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full font-semibold">112 mg/dL (High)</span>
-                </div>
-              </div>
-              <div className="text-[11px] text-slate-500 flex justify-between items-center border-t border-slate-900/80 pt-2">
-                <span>Confidence Rating:</span>
-                <span className="text-blue-400 font-bold">99.4%</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* 📊 NEW SECTION: IDEAL HEIGHT-WEIGHT INDEX (BMI REFERENCE) */}
-      <section className="max-w-5xl mx-auto px-6 pb-24 relative z-10">
-        <div className="bg-gradient-to-br from-[#0b1329] to-[#040814] border border-blue-950/80 rounded-3xl p-8 shadow-xl relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="max-w-xl text-left">
-              <div className="inline-flex items-center gap-2 text-blue-400 text-xs font-semibold mb-3">
-                <Scale size={16} /> Clinical Reference Anthropometry
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold text-white mb-2">Ideal Weight Proportions by Height (BMI Standard)</h3>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                A healthy physiological balance requires maintaining a body mass index within the standard 18.5 – 24.9 range. Check your structural weight benchmarks below:
-              </p>
-            </div>
-            
-            {/* Standard Metrics Table */}
-            <div className="w-full md:w-auto bg-[#030712] border border-slate-800/80 rounded-2xl overflow-hidden shadow-inner">
-              <table className="text-left border-collapse text-xs font-sans w-full md:w-80">
-                <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/50 text-slate-400">
-                    <th className="p-3 font-semibold">Height</th>
-                    <th className="p-3 font-semibold">Healthy Weight Range</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-900 font-medium text-slate-300">
-                  <tr><td className="p-3">5'2" (157 cm)</td><td className="p-3">46 – 61 kg</td></tr>
-                  <tr><td className="p-3">5'6" (168 cm)</td><td className="p-3">53 – 70 kg</td></tr>
-                  <tr><td className="p-3">5'10" (178 cm)</td><td className="p-3">61 – 80 kg</td></tr>
-                  <tr><td className="p-3">6'2" (188 cm)</td><td className="p-3">70 – 91 kg</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 🍏 NEW SECTION: INTERACTIVE CLINICAL DIET & EXERCISE PROTOCOLS */}
-      <section className="max-w-5xl mx-auto px-6 pb-28 relative z-10 text-left">
-        <div className="text-center md:text-left mb-10">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight">Clinical Diet & Exercise Resource Matrix</h2>
-          <p className="text-slate-400 text-sm mt-2 max-w-xl">
-            Select a specific health parameters to review structured therapeutic lifestyle adjustments verified by global nutrition frameworks.
-          </p>
-        </div>
-
-        {/* Tab Selection Switches */}
-        <div className="flex gap-2 border-b border-slate-800 pb-3 mb-8 overflow-x-auto">
-          {['diabetes', 'hypertension', 'thyroid'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-2 px-5 text-xs font-bold uppercase tracking-wider rounded-lg border transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab 
-                  ? 'bg-blue-600/10 border-blue-500 text-blue-400 shadow-lg' 
-                  : 'border-transparent text-slate-400 hover:text-white'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {/* Dynamic Display Grid */}
-        <div className="grid md:grid-cols-2 gap-6 items-stretch">
-          
-          {/* Diet Module */}
-          <div className="bg-[#0b1329]/40 border border-blue-950/60 p-6 rounded-2xl backdrop-blur-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-amber-400 font-bold text-sm mb-4">
-                <Apple size={18} /> Nutrition & Diet Restrictions
-              </div>
-              <h4 className="text-white font-bold text-base mb-3">{healthDatabase[activeTab].title}</h4>
-              <ul className="space-y-3">
-                {healthDatabase[activeTab].diet.map((item, index) => (
-                  <li key={index} className="text-slate-400 text-xs flex items-start gap-2 leading-relaxed">
-                    <span className="text-blue-500 mt-1">▪</span> {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Exercise Module */}
-          <div className="bg-[#0b1329]/40 border border-blue-950/60 p-6 rounded-2xl backdrop-blur-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-4">
-                <Dumbbell size={18} /> Structured Training Guidelines
-              </div>
-              <h4 className="text-white font-bold text-base mb-3">Therapeutic Physical Activity Plan</h4>
-              <ul className="space-y-3">
-                {healthDatabase[activeTab].exercise.map((item, index) => (
-                  <li key={index} className="text-slate-400 text-xs flex items-start gap-2 leading-relaxed">
-                    <span className="text-blue-500 mt-1">▪</span> {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-        </div>
-
-        {/* Informative Toast Note Box */}
-        <div className="mt-6 bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 flex items-start gap-3">
-          <Info size={16} className="text-blue-400 mt-0.5 shrink-0" />
-          <p className="text-slate-400 text-xs leading-relaxed">
-            <span className="text-white font-semibold">Important Notice:</span> {healthDatabase[activeTab].tip}
-          </p>
-        </div>
-      </section>
-
-      {/* 📚 STEP-BY-STEP FLOW GUIDE (TUTORIAL NODE) */}
-      <section className="max-w-5xl mx-auto px-6 pb-32 relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight">How to use SehatSathi</h2>
-          <p className="text-slate-400 text-sm mt-3 max-w-md mx-auto">Get your report simplified in four quick and straightforward steps.</p>
-        </div>
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
-          <div className="bg-[#0b1329]/20 border border-blue-950/40 p-6 rounded-xl hover:border-blue-500/20 transition-all duration-300"><div className="bg-blue-950/60 text-blue-400 w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm mb-5 border border-blue-900/30">1</div><h4 className="text-sm font-bold text-white mb-2">Create an Account</h4><p className="text-slate-400 text-xs leading-relaxed">Sign up securely with your email address to access your personalized health space.</p></div>
-          <div className="bg-[#0b1329]/20 border border-blue-950/40 p-6 rounded-xl hover:border-blue-500/20 transition-all duration-300"><div className="bg-blue-950/60 text-blue-400 w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm mb-5 border border-blue-900/30">2</div><h4 className="text-sm font-bold text-white mb-2">Upload Your Report</h4><p className="text-slate-400 text-xs leading-relaxed">Upload your lab reports securely as a standard PDF file or snap a clear photo from your phone.</p></div>
-          <div className="bg-[#0b1329]/20 border border-blue-950/40 p-6 rounded-xl hover:border-blue-500/20 transition-all duration-300"><div className="bg-blue-950/60 text-blue-400 w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm mb-5 border border-blue-900/30">3</div><h4 className="text-sm font-bold text-white mb-2">AI Smart Scanning</h4><p className="text-slate-400 text-xs leading-relaxed">Our advanced system extracts information, categorizes parameters, and runs a diagnostic layout mapping.</p></div>
-          <div className="bg-[#0b1329]/20 border border-blue-950/40 p-6 rounded-xl hover:border-blue-500/20 transition-all duration-300"><div className="bg-blue-950/60 text-blue-400 w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm mb-5 border border-blue-900/30">4</div><h4 className="text-sm font-bold text-white mb-2">Review Summary</h4><p className="text-slate-400 text-xs leading-relaxed">Read cleanly broken-down details, definitions, and health vital charts saved forever on your dashboard timeline.</p></div>
-        </div>
-      </section>
-
-      {/* 🔒 AUTH MODAL POPUP */}
-      {isAuthOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div onClick={() => setIsAuthOpen(false)} className="absolute inset-0 bg-black/75 backdrop-blur-md transition-opacity"></div>
-          <div className="relative bg-[#0b1329] w-full max-w-sm p-8 rounded-2xl border border-blue-950 shadow-2xl z-10 animate-in fade-in zoom-in-95 duration-200 shadow-black/80">
-            <button onClick={() => setIsAuthOpen(false)} className="absolute top-5 right-5 text-slate-500 hover:text-slate-300 p-1.5 rounded-full hover:bg-slate-800 transition-colors cursor-pointer"><X size={16} /></button>
-            <div className="text-center mb-6"><div className="inline-flex bg-blue-950/60 border border-blue-900/30 text-blue-400 p-2.5 rounded-xl mb-3"><Activity size={20} /></div><h2 className="text-xl font-bold text-white tracking-tight">{authMode === 'login' ? 'Sign In' : 'Create Account'}</h2><p className="text-slate-400 text-xs mt-1">{authMode === 'login' ? 'Access your secure medical dashboard' : 'Set up your credentials to get started'}</p></div>
-            <form onSubmit={handleAuthSubmit} className="space-y-4">
-              {authMode === 'signup' && (<div><label className="block text-xs font-semibold text-slate-400 mb-1.5">Full Name</label><input type="text" required placeholder="Amit Dubey" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-[#030712] border border-blue-950/60 focus:border-blue-500 focus:bg-[#050b18] rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all" /></div>)}
-              <div><label className="block text-xs font-semibold text-slate-400 mb-1.5">Email Address</label><input type="email" required placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#030712] border border-blue-950/60 focus:border-blue-500 focus:bg-[#050b18] rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all" /></div>
-              <div><label className="block text-xs font-semibold text-slate-400 mb-1.5">Password</label><input type="password" required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#030712] border border-blue-950/60 focus:border-blue-500 focus:bg-[#050b18] rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-all" /></div>
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all active:scale-[0.98] mt-3 cursor-pointer text-sm">{authMode === 'login' ? 'Sign In' : 'Sign Up'}</button>
-            </form>
-            <div className="text-center mt-6 pt-5 border-t border-blue-950/60"><p className="text-xs text-slate-400">{authMode === 'login' ? "New to SehatSathi? " : "Already have an account? "}<button onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-blue-400 font-semibold hover:underline cursor-pointer ml-1">{authMode === 'login' ? 'Create an Account' : 'Sign In'}</button></p></div>
-          </div>
-        </div>
-      )}
-
-      {/* 📑 FOOTER */}
-      <footer className="border-t border-slate-900 bg-[#010307] py-6 text-center text-xs text-slate-500">
-        © 2026 SehatSathi. Secure Medical Intelligence Layer.
-      </footer>
-
+      {/* CORE ROUTES CONTROLLER */}
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
     </div>
-  )
+  );
 }
-
-export default App
