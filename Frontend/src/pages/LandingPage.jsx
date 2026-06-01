@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Activity, FileText, Sparkles, BarChart3, AlertTriangle, Key, Upload, Heart, Zap, CheckCircle2, Award } from "lucide-react";
+import { Activity, FileText, Sparkles, BarChart3, AlertTriangle, Key, Upload, Heart, Zap, CheckCircle2, Award, Eye, EyeOff } from "lucide-react";
 
 const HEALTH_DATA = {
   diabetes: {
@@ -71,13 +71,22 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
-  const { loginWithEmail, loginWithGoogle } = useAuth();
+  const { loginNode, registerNode, loginWithGoogle } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [activeTab, setActiveTab] = useState("diabetes");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+
+  // ── NEW: password visibility toggle
+  const [showPassword, setShowPassword] = useState(false);
+
+  // ── NEW: forgot password states
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStep, setForgotStep] = useState("input"); // "input" | "sent"
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     const openLogin = () => { setAuthMode("login"); setAuthOpen(true); };
@@ -94,12 +103,23 @@ export default function LandingPage() {
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
-    const result = await loginWithEmail(email, password);
-    if (result.success) {
-      setAuthOpen(false);
-      setEmail(""); setPassword(""); setName("");
+    if (authMode === "signup") {
+      const result = await registerNode(name, email, password);
+      if (result.success) {
+        alert("🎉 Account node created successfully! Please Sign In with your credentials now.");
+        setAuthMode("login");
+        setPassword("");
+      } else {
+        alert(`❌ Signup Failed: ${result.error}`);
+      }
     } else {
-      alert(`Auth failed: ${result.error}`);
+      const result = await loginNode(email, password);
+      if (result.success) {
+        setAuthOpen(false);
+        setEmail(""); setPassword(""); setName("");
+      } else {
+        alert(`❌ Authentication Failed: ${result.error}`);
+      }
     }
   };
 
@@ -108,6 +128,37 @@ export default function LandingPage() {
     if (result.success) {
       setAuthOpen(false);
     }
+  };
+
+  // ── NEW: forgot password handlers
+  const handleForgotOpen = () => {
+    setForgotEmail("");
+    setForgotStep("input");
+    setForgotLoading(false);
+    setAuthOpen(false);
+    setForgotOpen(true);
+  };
+
+  const handleForgotClose = () => {
+    setForgotOpen(false);
+    setForgotEmail("");
+    setForgotStep("input");
+    setForgotLoading(false);
+  };
+
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) return;
+    setForgotLoading(true);
+    await new Promise((resolve) => setTimeout(resolve, 1400));
+    setForgotLoading(false);
+    setForgotStep("sent");
+  };
+
+  const handleBackToLogin = () => {
+    handleForgotClose();
+    setAuthMode("login");
+    setAuthOpen(true);
   };
 
   const tab = HEALTH_DATA[activeTab];
@@ -167,7 +218,7 @@ export default function LandingPage() {
 
             <div style={{ padding: "32px", display: "grid", gridTemplateColumns: "1fr 40px 1fr", gap: 20, alignItems: "center" }}>
               <div style={{ background: "#030712", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 12, padding: 20, height: 210, display: "flex", flexDirection: "column", justifyContent: "space-between", textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", justify: "space-between", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: 10 }}>
                   <span style={{ fontSize: 10, color: "#475569", fontFamily: "monospace" }}>SOURCE_METRICS.PDF</span>
                   <FileText size={14} className="text-blue-500" />
                 </div>
@@ -182,7 +233,7 @@ export default function LandingPage() {
               <div style={{ color: "#2563eb", fontSize: 16, fontWeight: "bold", textAlign: "center" }}>➔</div>
 
               <div style={{ background: "#030712", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 12, padding: 16, height: 210, display: "flex", flexDirection: "column", gap: 10, textAlign: "left" }}>
-                <div style={{ display: "flex", alignItems: "center", justify: "space-between", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid rgba(255,255,255,0.04)", paddingBottom: 8 }}>
                   <span style={{ fontSize: 10, color: "#60a5fa", fontFamily: "monospace" }}>MAPPED_INDEX</span>
                   <span style={{ fontSize: 9, color: "#22c55e", fontWeight: 700 }}>99.4% Accurate</span>
                 </div>
@@ -253,7 +304,7 @@ export default function LandingPage() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 24 }}>
           <div className="card-hover" style={{ borderRadius: 16, padding: "28px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.08)", display: "flex", alignItems: "center", center: "center", justifyContent: "center", fontSize: 16 }}>🍏</div>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🍏</div>
               <div>
                 <div style={{ fontSize: 10, color: "#60a5fa", fontWeight: 700, textTransform: "uppercase" }}>DIETARY INTAKE GUIDANCE</div>
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 600 }}>{tab.title}</div>
@@ -271,7 +322,7 @@ export default function LandingPage() {
 
           <div className="card-hover" style={{ borderRadius: 16, padding: "28px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.08)", display: "flex", alignItems: "center", center: "center", justifyContent: "center", fontSize: 16 }}>💪</div>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>💪</div>
               <div>
                 <div style={{ fontSize: 10, color: "#60a5fa", fontWeight: 700, textTransform: "uppercase" }}>EXERCISE FRAMEWORK</div>
                 <div style={{ fontSize: 14, color: "#e2e8f0", fontWeight: 600 }}>Prescribed Physical Activity Map</div>
@@ -354,11 +405,43 @@ export default function LandingPage() {
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>EMAIL NETWORK KEY</label>
                 <input className="input-field" type="email" required placeholder="name@domain.com" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
+
+              {/* PASSWORD FIELD — eye toggle added, forgot password link added below */}
               <div>
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>SECURITY ACCESS PHRASE</label>
-                <input className="input-field" type="password" required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} />
+                <div style={{ position: "relative" }}>
+                  <input
+                    className="input-field"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    style={{ paddingRight: 40 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(prev => !prev)}
+                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
-              
+
+              {authMode === "login" && (
+                <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6 }}>
+                  <button
+                    type="button"
+                    onClick={handleForgotOpen}
+                    style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 11, fontWeight: 600, cursor: "pointer", padding: 0 }}
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
+              )}
+
               <button type="submit" className="btn-primary" style={{ marginTop: 4, width: "100%", fontSize: 13 }}>
                 {authMode === "login" ? "Authenticate →" : "Authorize Session →"}
               </button>
@@ -396,6 +479,63 @@ export default function LandingPage() {
                 </button>
               </span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORGOT PASSWORD MODAL */}
+      {forgotOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(2,4,8,0.8)", backdropFilter: "blur(16px)" }} onClick={handleForgotClose}>
+          <div style={{ width: "100%", maxWidth: 390, background: "#0b1329", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "32px 36px 36px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+            <button style={{ position: "absolute", top: 16, right: 16, background: "transparent", border: "none", color: "#475569", cursor: "pointer", fontSize: 16 }} onClick={handleForgotClose}>✕</button>
+
+            <div style={{ textAlign: "center", marginBottom: 20 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 6px 16px rgba(37,99,235,0.2)" }}>
+                <Key size={20} style={{ color: "white" }} />
+              </div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 4 }}>
+                {forgotStep === "sent" ? "Reset Link Dispatched" : "Reset Access Phrase"}
+              </h3>
+              <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>
+                {forgotStep === "sent"
+                  ? `A reset link has been sent to ${forgotEmail}. Check your inbox.`
+                  : "Enter your registered email and we'll dispatch a secure reset link."}
+              </p>
+            </div>
+
+            {forgotStep === "input" ? (
+              <form onSubmit={handleForgotSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>REGISTERED EMAIL ADDRESS</label>
+                  <input className="input-field" type="email" required placeholder="name@domain.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
+                </div>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                  disabled={forgotLoading}
+                  style={{ marginTop: 4, width: "100%", fontSize: 13, opacity: forgotLoading ? 0.7 : 1, cursor: forgotLoading ? "not-allowed" : "pointer" }}
+                >
+                  {forgotLoading ? "Dispatching Link..." : "Send Reset Link →"}
+                </button>
+                <div style={{ textAlign: "center" }}>
+                  <button type="button" onClick={handleBackToLogin} style={{ background: "none", border: "none", color: "#60a5fa", fontWeight: 600, cursor: "pointer", fontSize: 12 }}>
+                    ← Back to Sign In
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>📬</div>
+                  <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
+                    If this email is registered, you'll receive a reset link shortly. Check your spam folder if it doesn't arrive within a few minutes.
+                  </p>
+                </div>
+                <button type="button" className="btn-primary" onClick={handleBackToLogin} style={{ width: "100%", fontSize: 13 }}>
+                  ← Return to Sign In
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

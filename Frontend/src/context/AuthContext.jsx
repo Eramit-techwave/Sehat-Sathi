@@ -1,4 +1,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
+// 🔒 Firebase integration modules import kiye
+import { signInWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "../firebase";
 
 const AuthContext = createContext(null);
 
@@ -21,8 +24,6 @@ export const AuthProvider = ({ children }) => {
 
   // 📝 REAL API ACTION: USER SIGNUP
   const loginWithEmail = async (email, password) => {
-    // Kyunki landing page par signup/login dono isi ek entry function se bind hain, 
-    // hum check karenge ki name state exist karti hai ya nahi registration routing ke liye
     return { success: false, error: "Pipeline migrating..." };
   };
 
@@ -62,13 +63,43 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🌐 100% REAL REFACTORED METHOD: GOOGLE AUTH WITH FIREBASE
   const loginWithGoogle = async () => {
-    // Micro-mock link for frontend workflow validation
-    const mockGoogleUser = { id: "goog_node", name: "Google Operator", email: "google.user@mesh.com" };
-    localStorage.setItem("sehat_sathi_token", "G_MOCK_TOKEN");
-    localStorage.setItem("sehat_sathi_user", JSON.stringify(mockGoogleUser));
-    setUser(mockGoogleUser);
-    return { success: true };
+    try {
+      console.log("🚀 Initializing Real Google Auth Firebase Handshake...");
+      
+      // 1. Firebase pop-up open karke real Google user data fetch karna
+      const firebaseResult = await signInWithPopup(auth, googleProvider);
+      const firebaseUser = firebaseResult.user;
+
+      const realGooglePayload = {
+        name: firebaseUser.displayName,
+        email: firebaseUser.email,
+        uid: firebaseUser.uid
+      };
+
+      console.log("📥 Real Google Data Received: ", realGooglePayload);
+
+      // 2. Data ko FastAPI backend pipeline me hit karwana
+      const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(realGooglePayload),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.detail || "FastAPI Google pipeline mapping failed");
+
+      // 3. Real secure backend token aur user session browser me register karna
+      localStorage.setItem("sehat_sathi_token", data.token);
+      localStorage.setItem("sehat_sathi_user", JSON.stringify(data.user));
+      setUser(data.user);
+      
+      return { success: true };
+    } catch (err) {
+      console.error("❌ Google Auth Error Details: ", err);
+      return { success: false, error: err.message };
+    }
   };
 
   const logout = () => {
