@@ -71,30 +71,24 @@ const STEPS = [
 ];
 
 export default function LandingPage() {
-  const { loginNode, registerNode, loginWithGoogle } = useAuth();
+  const { loginNode, registerNode, loginWithGoogle, resetPassword } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState("login");
   const [activeTab, setActiveTab] = useState("diabetes");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-
-  // ── NEW: password visibility toggle
   const [showPassword, setShowPassword] = useState(false);
-
-  // ── NEW: forgot password states
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
-  const [forgotStep, setForgotStep] = useState("input"); // "input" | "sent"
+  const [forgotStep, setForgotStep] = useState("input");
   const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     const openLogin = () => { setAuthMode("login"); setAuthOpen(true); };
     const openSignup = () => { setAuthMode("signup"); setAuthOpen(true); };
-
     window.addEventListener("trigger-login-modal", openLogin);
     window.addEventListener("trigger-signup-modal", openSignup);
-
     return () => {
       window.removeEventListener("trigger-login-modal", openLogin);
       window.removeEventListener("trigger-signup-modal", openSignup);
@@ -130,7 +124,6 @@ export default function LandingPage() {
     }
   };
 
-  // ── NEW: forgot password handlers
   const handleForgotOpen = () => {
     setForgotEmail("");
     setForgotStep("input");
@@ -146,13 +139,18 @@ export default function LandingPage() {
     setForgotLoading(false);
   };
 
+  // ── REAL Firebase password reset — ab actual email jaayegi
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
     setForgotLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1400));
+    const result = await resetPassword(forgotEmail);
     setForgotLoading(false);
-    setForgotStep("sent");
+    if (result.success) {
+      setForgotStep("sent");
+    } else {
+      alert(`❌ Error: ${result.error}`);
+    }
   };
 
   const handleBackToLogin = () => {
@@ -187,7 +185,6 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* HIGH-FIDELITY APP INTERACTION MOCKUP */}
         <div style={{ marginTop: 64, position: "relative" }}>
           <div className="float-card" style={{ position: "absolute", top: 20, left: "2%", zIndex: 5, background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 18px", textAlign: "left", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: 9, color: "#60a5fa", fontWeight: 700, marginBottom: 2, letterSpacing: "0.04em" }}>HEMOGLOBIN BASAL</div>
@@ -367,7 +364,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CALL TO ACTION LINK FOR REGISTRATION */}
+      {/* CALL TO ACTION */}
       <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "0 6%" }}>
         <div style={{ background: "linear-gradient(135deg, rgba(37,99,235,0.08), rgba(30,58,138,0.03))", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 24, padding: "50px 32px", textAlign: "center" }}>
           <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 44px)", color: "#ffffff", marginBottom: 12 }}>
@@ -380,12 +377,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ACCOUNT AUTHORIZATION MODAL WINDOW WITH GOOGLE SIGN-IN */}
+      {/* AUTH MODAL */}
       {authOpen && (
         <div className="modal-backdrop" style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(2,4,8,0.8)", backdropFilter: "blur(16px)" }} onClick={() => setAuthOpen(false)}>
           <div className="modal-card" style={{ width: "100%", maxWidth: 390, background: "#0b1329", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "32px 36px 36px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
             <button style={{ position: "absolute", top: 16, right: 16, background: "transparent", border: "none", color: "#475569", cursor: "pointer", fontSize: 16 }} onClick={() => setAuthOpen(false)}>✕</button>
-            
+
             <div style={{ textAlign: "center", marginBottom: 20 }}>
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 6px 16px rgba(37,99,235,0.2)" }}>
                 <Activity size={20} style={{ color: "white" }} />
@@ -405,8 +402,6 @@ export default function LandingPage() {
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>EMAIL NETWORK KEY</label>
                 <input className="input-field" type="email" required placeholder="name@domain.com" value={email} onChange={e => setEmail(e.target.value)} />
               </div>
-
-              {/* PASSWORD FIELD — eye toggle added, forgot password link added below */}
               <div>
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>SECURITY ACCESS PHRASE</label>
                 <div style={{ position: "relative" }}>
@@ -432,11 +427,7 @@ export default function LandingPage() {
 
               {authMode === "login" && (
                 <div style={{ display: "flex", justifyContent: "flex-end", marginTop: -6 }}>
-                  <button
-                    type="button"
-                    onClick={handleForgotOpen}
-                    style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 11, fontWeight: 600, cursor: "pointer", padding: 0 }}
-                  >
+                  <button type="button" onClick={handleForgotOpen} style={{ background: "none", border: "none", color: "#60a5fa", fontSize: 11, fontWeight: 600, cursor: "pointer", padding: 0 }}>
                     Forgot Password?
                   </button>
                 </div>
@@ -452,14 +443,10 @@ export default function LandingPage() {
                 <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.1)" }} />
               </div>
 
-              <button 
+              <button
                 type="button"
                 onClick={handleGoogleAuth}
-                style={{
-                  width: "100%", background: "rgba(255, 255, 255, 0.03)", border: "1px solid rgba(255, 255, 255, 0.08)",
-                  borderRadius: "12px", padding: "12px 16px", color: "#fff", fontSize: "13px", fontWeight: 600,
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer"
-                }}
+                style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#fff", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />

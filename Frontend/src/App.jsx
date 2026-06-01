@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard.jsx";
 import { Activity, LogOut } from "lucide-react";
 
@@ -239,6 +240,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </div>
