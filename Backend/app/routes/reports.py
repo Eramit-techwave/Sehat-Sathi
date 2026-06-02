@@ -25,7 +25,8 @@ async def extract_report(file: UploadFile = File(...)):
     try:
         file_bytes = await file.read()
         
-        system_ai_prompt = """
+        # 🌟 JSON structure ke curly braces ko double ({{ }}) kar diya hai taaki f-string crash na kare
+        system_ai_prompt = f"""
         You are an expert AI Medical Consultant. Analyze the attached lab report and perform two tasks:
         1. Extract all biomarkers into a structured table, including their normal reference ranges.
         2. Generate a high-level clinical summary highlighting critical anomalies.
@@ -33,17 +34,17 @@ async def extract_report(file: UploadFile = File(...)):
         You MUST return the output strictly as a valid JSON object without markdown or backticks.
 
         Structure:
-        {
-          "extracted_vitals": {"metabolic": "1850 kcal", "cardio": "72 bpm", "confidence": "99.5%"},
-          "ai_consultant_summary": {
+        {{
+          "extracted_vitals": {{"metabolic": "1850 kcal", "cardio": "72 bpm", "confidence": "99.5%"}},
+          "ai_consultant_summary": {{
             "status_headline": "Headline summary",
             "critical_findings": "High/Low description",
             "recommendations": "Actionable lifestyle or dietary advice"
-          },
+          }},
           "parameters_table": [
-            {"name": "Biomarker Name", "value": "141.0 mg/dL", "normal_range": "70 - 100 mg/dL", "status": "High", "issue_description": "Context"}
+            {{"name": "Biomarker Name", "value": "141.0 mg/dL", "normal_range": "70 - 100 mg/dL", "status": "High", "issue_description": "Context"}}
           ]
-        }
+        }}
         """
 
         print("🧠 Triggering Gemini Neural Analysis Hub...")
@@ -66,7 +67,7 @@ async def extract_report(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# ── 🌟 REAL-TIME LIVE AI CHAT ROUTE ──
+# ── 🌟 REAL-TIME LIVE AI CHAT ROUTE (CRISP & FRIENDLY CONVERSATION NODE) ──
 @router.post("/chat-report")
 async def chat_with_report(payload: ChatRequest):
     try:
@@ -75,19 +76,20 @@ async def chat_with_report(payload: ChatRequest):
         context_string = json.dumps(context_data, indent=2)
         
         chat_prompt = f"""
-        You are an empathetic, expert AI Medical Doctor chatbot named 'Sehat-Sathi Consultant'. 
-        You are talking directly to the patient in a friendly Hinglish/English mix tone.
-        
-        Here is the Patient's Medical Report Data:
+        You are a super cool, friendly, and empathetic AI health friend named 'Sehat-Sathi'.
+        Act like a close friend, buddy, or a chilling personal health coach who talks directly to the patient in crisp, short, and natural Hinglish.
+
+        Here is the Patient's Medical Report Data for your context:
         {context_string}
         
         Patient's Question: "{payload.message}"
         
-        Instructions:
-        1. Answer the patient's question accurately using the provided report data context.
-        2. Speak in a natural conversational mix of Hindi and English (Hinglish), just like a real tech-savvy Indian doctor talking to a patient.
-        3. If they ask about diets (e.g., "kya khaye", "vitamin d kam h to kya kare"), give specific food recommendations based on their High/Low parameters.
-        4. Do not use complex system words like 'database node', 'payload', or 'ledger matrix'. Keep it human, precise and encouraging.
+        STRICT RULES FOR YOUR RESPONSE:
+        1. Keep your answer VERY SHORT, CRISP, and DIRECT (Maximum 3 to 5 lines). Absolutely NO long lectures or massive essay lists!
+        2. Speak in a natural conversational mix of Hindi and English (Hinglish), exactly how friends chat with each other on WhatsApp.
+        3. Never repeat the whole report summary or list every single issue again if the user asks a small specific question. Just answer that specific point straight away.
+        4. If they ask about diets (e.g., "kya khaye", "kya nahi khaye"), give exactly 2-3 specific main items directly based on their parameters. (e.g., "Bhai, sugar high hai toh meetha aur refined carbs bilkul touch mat karo!").
+        5. Use cool emojis naturally, keep it human, comforting, and highly engaging. Do not use robotic terms like 'database node' or 'ledger matrix'.
         """
         
         response = client.models.generate_content(
