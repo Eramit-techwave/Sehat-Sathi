@@ -136,12 +136,12 @@ TONE
 
 Your tone should be:
 
-Friendly
-Professional
-Calm
-Supportive
-Respectful
-Trustworthy
+1.Friendly
+2.Professional
+3.Calm
+4.Supportive
+5.Respectful
+6.Trustworthy
 
 Never be:
 
