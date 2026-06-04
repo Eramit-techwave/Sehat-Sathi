@@ -1,50 +1,20 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Activity, FileText, Sparkles, BarChart3, AlertTriangle, Key, Upload, Heart, Zap, CheckCircle2, Award, Eye, EyeOff, Stethoscope, Clock, Pill, Droplet, Users, MapPin, Phone, Calendar, MessageSquare, Video, Headphones, Shield, Wallet, TrendingUp, AlertCircle as AlertIcon } from "lucide-react";
+import { 
+  Activity, FileText, Sparkles, Key, Upload, Heart, Zap, CheckCircle2, 
+  Award, Eye, EyeOff, Stethoscope, Clock, Pill, Droplet, Users, 
+  MapPin, Phone, Calendar, MessageSquare, Video, Headphones, Shield, 
+  Wallet, TrendingUp, AlertCircle as AlertIcon 
+} from "lucide-react";
 
+// ── DATA LEDGERS ──────────────────────────────────────────────────────────
 const WHY_CHOOSE_FEATURES = [
-  {
-    icon: "🔬",
-    title: "AI Report Analysis",
-    desc: "Understand medical reports instantly.",
-    color: "#3b82f6",
-    gradient: "rgba(59,130,246,0.1)"
-  },
-  {
-    icon: "👨‍⚕️",
-    title: "Trusted Doctor Consultation",
-    desc: "Connect with verified doctors online.",
-    color: "#60a5fa",
-    gradient: "rgba(96,165,250,0.1)"
-  },
-  {
-    icon: "📅",
-    title: "Easy Appointment Booking",
-    desc: "Skip hospital queues and save time.",
-    color: "#2563eb",
-    gradient: "rgba(37,99,235,0.1)"
-  },
-  {
-    icon: "🩸",
-    title: "Blood Donor Network",
-    desc: "Find blood donors during emergencies.",
-    color: "#ef4444",
-    gradient: "rgba(239,68,68,0.1)"
-  },
-  {
-    icon: "💊",
-    title: "Medicine Assistance",
-    desc: "Locate nearby medical stores and medicines.",
-    color: "#f59e0b",
-    gradient: "rgba(245,158,11,0.1)"
-  },
-  {
-    icon: "🔐",
-    title: "Secure Health Records",
-    desc: "Keep all reports organized safely.",
-    color: "#22c55e",
-    gradient: "rgba(34,197,94,0.1)"
-  }
+  { icon: "🔬", title: "AI Report Analysis", desc: "Understand medical reports instantly.", color: "#3b82f6", gradient: "rgba(59,130,246,0.1)" },
+  { icon: "👨‍⚕️", title: "Trusted Doctor Consultation", desc: "Connect with verified doctors online.", color: "#60a5fa", gradient: "rgba(96,165,250,0.1)" },
+  { icon: "📅", title: "Easy Appointment Booking", desc: "Skip hospital queues and save time.", color: "#2563eb", gradient: "rgba(37,99,235,0.1)" },
+  { icon: "🩸", title: "Blood Donor Network", desc: "Find blood donors during emergencies.", color: "#ef4444", gradient: "rgba(239,68,68,0.1)" },
+  { icon: "💊", title: "Medicine Assistance", desc: "Locate nearby medical stores and medicines.", color: "#f59e0b", gradient: "rgba(245,158,11,0.1)" },
+  { icon: "🔐", title: "Secure Health Records", desc: "Keep all reports organized safely.", color: "#22c55e", gradient: "rgba(34,197,94,0.1)" }
 ];
 
 const DOCTOR_FEATURES = [
@@ -81,72 +51,38 @@ const BLOOD_DONOR_INFO = [
 
 const HEALTH_DATA = {
   diabetes: {
-    label: "Diabetes",
-    color: "#3b82f6",
-    icon: "🩸",
-    title: "Type-2 Diabetes Management Protocols",
-    diet: [
-      "Prioritize complex carbohydrates: oats, quinoa, brown rice over refined grains",
-      "Incorporate high-fiber greens — spinach, broccoli, and kale daily",
-      "Strictly eliminate refined sugars and high-glycemic commercial fruit juices",
-    ],
-    exercise: [
-      "Maintain 30 minutes of moderate brisk walking or indoor cycling daily",
-      "Execute light resistance training 2–3× weekly for optimized insulin sensitivity",
-      "Consistently monitor blood glucose parameters before and after training sessions",
-    ],
-    tip: "Never skip meals. A highly consistent eating schedule prevents dangerous glycemic spikes.",
+    label: "Diabetes", color: "#3b82f6", icon: "🩸", title: "Type-2 Diabetes Management Protocols",
+    diet: ["Prioritize complex carbohydrates: oats, quinoa, brown rice over refined grains", "Incorporate high-fiber greens — spinach, broccoli, and kale daily", "Strictly eliminate refined sugars and high-glycemic commercial fruit juices"],
+    exercise: ["Maintain 30 minutes of moderate brisk walking or indoor cycling daily", "Execute light resistance training 2–3× weekly for optimized insulin sensitivity", "Consistently monitor blood glucose parameters before and after training sessions"],
+    tip: "Never skip meals. A highly consistent eating schedule prevents dangerous glycemic spikes."
   },
   hypertension: {
-    label: "Hypertension",
-    color: "#60a5fa",
-    icon: "❤️",
-    title: "Cardiovascular Care & Regulation Plan",
-    diet: [
-      "Follow the clinical DASH diet: increase intake of whole fruits and lean proteins",
-      "Restrict daily sodium consumption strictly below 1,500 mg",
-      "Prioritize potassium-dense items: organic bananas, avocados, sweet potatoes",
-    ],
-    exercise: [
-      "Engage in low-impact aerobic activity: swimming, light jogging, or structural aerobics",
-      "Avoid heavy weightlifting cycles that cause immediate cardiovascular pressure spikes",
-      "Incorporate 15 minutes of daily regulatory deep breathing or yoga sessions",
-    ],
-    tip: "Always review packaged food labels — hidden sodium levels are heavily present in processed goods.",
+    label: "Hypertension", color: "#60a5fa", icon: "❤️", title: "Cardiovascular Care & Regulation Plan",
+    diet: ["Follow the clinical DASH diet: increase intake of whole fruits and lean proteins", "Restrict daily sodium consumption strictly below 1,500 mg", "Prioritize potassium-dense items: organic bananas, avocados, sweet potatoes"],
+    exercise: ["Engage in low-impact aerobic activity: swimming, light jogging, or structural aerobics", "Avoid heavy weightlifting cycles that cause immediate cardiovascular pressure spikes", "Incorporate 15 minutes of daily regulatory deep breathing or yoga sessions"],
+    tip: "Always review packaged food labels — hidden sodium levels are heavily present in processed goods."
   },
   thyroid: {
-    label: "Thyroid",
-    color: "#2563eb",
-    icon: "🦋",
-    title: "Hypothyroidism Metabolic Optimization",
-    diet: [
-      "Incorporate standard iodine & selenium-dense nutrition: eggs, dairy, whole grains",
-      "Always cook goitrogens (cabbage, cauliflower, broccoli) thoroughly before consumption",
-      "Maintain an elevated clean lean protein baseline to optimize natural basal metabolic rates",
-    ],
-    exercise: [
-      "Perform consistent moderate-intensity cardio workouts to counter metabolic slowing",
-      "Execute strength training modules to build lean mass and increase resting energy expenditure",
-      "Execute thorough joint warm-ups — thyroid imbalances frequently trigger structural stiffness",
-    ],
-    tip: "Take prescribed thyroid regulation medications strictly on an empty stomach, 30–60 minutes before breakfast.",
-  },
+    label: "Thyroid", color: "#2563eb", icon: "🦋", title: "Hypothyroidism Metabolic Optimization",
+    diet: ["Incorporate standard iodine & selenium-dense nutrition: eggs, dairy, whole grains", "Always cook goitrogens (cabbage, cauliflower, broccoli) thoroughly before consumption", "Maintain an elevated clean lean protein baseline to optimize natural basal metabolic rates"],
+    exercise: ["Perform consistent moderate-intensity cardio workouts to counter metabolic slowing", "Execute strength training modules to build lean mass and increase resting energy expenditure", "Execute thorough joint warm-ups — thyroid imbalances frequently trigger structural stiffness"],
+    tip: "Take prescribed thyroid regulation medications strictly on an empty stomach, 30–60 minutes before breakfast."
+  }
 };
 
 const BMI_DATA = [
   { height: "5'2\" (157 cm)", range: "46 – 61 kg" },
   { height: "5'6\" (168 cm)", range: "53 – 70 kg" },
   { height: "5'10\" (178 cm)", range: "61 – 80 kg" },
-  { height: "6'2\" (188 cm)", range: "70 – 91 kg" },
+  { height: "6'2\" (188 cm)", range: "70 – 91 kg" }
 ];
 
 const STEPS = [
   { n: "01", title: "Create Profile", desc: "Initialize your profile securely and unlock your dedicated health data repository." },
   { n: "02", title: "Upload Records", desc: "Ingest document binaries via PDF format or capture clear smartphone diagnostic logs." },
   { n: "03", title: "Neural Extraction", desc: "Our multimodal vision algorithm extracts and structures raw data tables instantly." },
-  { n: "04", title: "Review Assessment", desc: "Access simplified parameter explanations and view long-term digital health trends." },
+  { n: "04", title: "Review Assessment", desc: "Access simplified parameter explanations and view long-term digital health trends." }
 ];
-
 
 export default function LandingPage() {
   const { loginNode, registerNode, loginWithGoogle, resetPassword } = useAuth();
@@ -157,6 +93,7 @@ export default function LandingPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("Patient");
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotStep, setForgotStep] = useState("input");
@@ -176,13 +113,13 @@ export default function LandingPage() {
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     if (authMode === "signup") {
-      const result = await registerNode(name, email, password);
+      const result = await registerNode(name, email, password, selectedRole);
       if (result.success) {
-        alert("Your  Account has been  created successfully! Please Sign In with your credentials now.");
+        alert(`Your Account status [${selectedRole}] has been provisioned successfully! Please Sign In.`);
         setAuthMode("login");
         setPassword("");
       } else {
-        alert(`❌ Opps! Signup Failed: ${result.error}`);
+        alert(`❌ Signup Failed: ${result.error}`);
       }
     } else {
       const result = await loginNode(email, password);
@@ -190,7 +127,7 @@ export default function LandingPage() {
         setAuthOpen(false);
         setEmail(""); setPassword(""); setName("");
       } else {
-        alert(`❌ Authentication Failed Try again : ${result.error}`);
+        alert(`❌ Authentication Failed Try again: ${result.error}`);
       }
     }
   };
@@ -203,21 +140,14 @@ export default function LandingPage() {
   };
 
   const handleForgotOpen = () => {
-    setForgotEmail("");
-    setForgotStep("input");
-    setForgotLoading(false);
-    setAuthOpen(false);
-    setForgotOpen(true);
+    setForgotEmail(""); setForgotStep("input"); setForgotLoading(false);
+    setAuthOpen(false); setForgotOpen(true);
   };
 
   const handleForgotClose = () => {
-    setForgotOpen(false);
-    setForgotEmail("");
-    setForgotStep("input");
-    setForgotLoading(false);
+    setForgotOpen(false); setForgotEmail(""); setForgotStep("input"); setForgotLoading(false);
   };
 
-  // ── REAL Firebase password reset — ab actual email jaayegi
   const handleForgotSubmit = async (e) => {
     e.preventDefault();
     if (!forgotEmail.trim()) return;
@@ -232,45 +162,45 @@ export default function LandingPage() {
   };
 
   const handleBackToLogin = () => {
-    handleForgotClose();
-    setAuthMode("login");
-    setAuthOpen(true);
+    handleForgotClose(); setAuthMode("login"); setAuthOpen(true);
   };
 
-  const tab = HEALTH_DATA[activeTab];
+  const tab = HEALTH_DATA[activeTab] || HEALTH_DATA["diabetes"];
+  const inputStyle = { width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", marginTop: "6px" };
+  const selectStyle = { width: "100%", background: "#091022", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fbbf24", fontSize: 13, fontWeight: "600", outline: "none", boxSizing: "border-box", marginTop: "6px", cursor: "pointer" };
 
   return (
-    <>
+    <div style={{ background: "#030712", color: "#f3f4f6", minHeight: "100vh", width: "100vw", overflowX: "hidden" }}>
       {/* HERO SECTION */}
       <header className="relative" style={{ zIndex: 2, maxWidth: 1140, margin: "0 auto", padding: "80px 6% 60px", textAlign: "center" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(37,99,235,0.05)", border: "1px solid rgba(37,99,235,0.18)", color: "#60a5fa", fontSize: 11, fontWeight: 600, padding: "6px 16px", borderRadius: 100, marginBottom: 24, letterSpacing: "0.05em" }}>
           <Sparkles size={12} /> AUTOMATED CLINICAL INTELLIGENCE FRAMEWORK
         </div>
 
-        <h1 className="serif" style={{ fontSize: "clamp(38px, 5.2vw, 70px)", lineHeight: 1.1, color: "#ffffff", marginBottom: 20, letterSpacing: "-0.02em" }}>
+        <h1 className="serif" style={{ fontSize: "clamp(38px, 5.2vw, 70px)", lineHeight: 1.1, color: "#ffffff", marginBottom: 20, letterSpacing: "-0.02em", margin: 0 }}>
           Understand your <br />
           <span className="shimmer-text">medical lab reports</span> <br />
           <em style={{ color: "#64748b", fontSize: "0.82em" }}>in plain, clinical clarity</em>
         </h1>
 
-        <p style={{ fontSize: 16, color: "#94a3b8", maxWidth: 580, margin: "0 auto 36px", lineHeight: 1.7 }}>
+        <p style={{ fontSize: 16, color: "#94a3b8", maxWidth: 580, margin: "16px auto 36px", lineHeight: 1.7 }}>
           Transform unstructured diagnostic readouts, complex medical blood test sheets, and biochemical reports into completely structured explanations instantly.
         </p>
 
-        <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
           <button className="btn-primary" style={{ fontSize: 14, padding: "16px 36px" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
             Start Assessment Free
           </button>
         </div>
 
         <div style={{ marginTop: 64, position: "relative" }}>
-          <div className="float-card" style={{ position: "absolute", top: 20, left: "2%", zIndex: 5, background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 18px", textAlign: "left", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
+          <div style={{ position: "absolute", top: 20, left: "2%", zIndex: 5, background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 18px", textAlign: "left", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: 9, color: "#60a5fa", fontWeight: 700, marginBottom: 2, letterSpacing: "0.04em" }}>HEMOGLOBIN BASAL</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#ffffff" }}>14.5 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400 }}>g/dL</span></div>
             <div style={{ fontSize: 10, color: "#22c55e", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>● Reference Normal</div>
           </div>
 
-          <div className="float-card-2" style={{ position: "absolute", bottom: 36, right: "2%", zIndex: 5, background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 18px", textAlign: "left", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
+          <div style={{ position: "absolute", bottom: 36, right: "2%", zIndex: 5, background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 18px", textAlign: "left", boxShadow: "0 10px 30px rgba(0,0,0,0.3)" }}>
             <div style={{ fontSize: 9, color: "#fbbf24", fontWeight: 700, marginBottom: 2, letterSpacing: "0.04em" }}>FASTING GLUCOSE</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: "#ffffff" }}>112 <span style={{ fontSize: 12, color: "#475569", fontWeight: 400 }}>mg/dL</span></div>
             <div style={{ fontSize: 10, color: "#fbbf24", marginTop: 4 }}>▲ Borderline Elevated</div>
@@ -359,7 +289,7 @@ export default function LandingPage() {
           <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Therapeutic Lifestyle Index</div>
           <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 42px)", color: "#ffffff", fontWeight: 400 }}>
             Clinical Nutrition & Activity
-            <br /><em style={{ color: "#64748b" }}>Guidelines Sorted by Condition</em>
+            <br /><em style={{ color: "#64748b holiday" }}>Guidelines Sorted by Condition</em>
           </h2>
         </div>
 
@@ -579,7 +509,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* BLOOD DONOR NETWORK SECTION */}
+      {/* BLOOD DONOR SECTION */}
       <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
         <div style={{ textAlign: "center", marginBottom: 48 }}>
           <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Emergency Support</div>
@@ -636,15 +566,12 @@ export default function LandingPage() {
               <div style={{ fontSize: 40, marginBottom: 16 }}>{item.icon}</div>
               <h4 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>{item.title}</h4>
               <p style={{ fontSize: 12.5, color: "#64748b", lineHeight: 1.65 }}>{item.desc}</p>
-              {idx < HOW_IT_WORKS_STEPS.length - 1 && (
-                <div style={{ position: "absolute", bottom: -24, left: "50%", color: "#2563eb", fontSize: 20 }}>↓</div>
-              )}
             </div>
           ))}
         </div>
       </section>
 
-      {/* AUTH MODAL */}
+      {/* AUTH MODAL WITH ROLE SELECTOR */}
       {authOpen && (
         <div className="modal-backdrop" style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(2,4,8,0.8)", backdropFilter: "blur(16px)" }} onClick={() => setAuthOpen(false)}>
           <div className="modal-card" style={{ width: "100%", maxWidth: 390, background: "#0b1329", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "32px 36px 36px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
@@ -660,33 +587,33 @@ export default function LandingPage() {
 
             <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {authMode === "signup" && (
-                <div>
-                  <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>FULL OPERATIONAL NAME</label>
-                  <input className="input-field" type="text" required placeholder="Amit Dubey" value={name} onChange={e => setName(e.target.value)} />
-                </div>
+                <>
+                  <div>
+                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>FULL OPERATIONAL NAME</label>
+                    <input className="input-field" type="text" required placeholder="Amit Dubey" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>SELECT REGISTRATION ROLE NODE</label>
+                    <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)} style={selectStyle}>
+                      <option value="Patient">Patient Core User</option>
+                      <option value="Doctor">Certified Specialist / Doctor</option>
+                      <option value="Hospital">Hospital Authority Management</option>
+                      <option value="Admin">Central Controller Admin</option>
+                    </select>
+                  </div>
+                </>
               )}
+              
               <div>
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>EMAIL NETWORK KEY</label>
-                <input className="input-field" type="email" required placeholder="name@domain.com" value={email} onChange={e => setEmail(e.target.value)} />
+                <input className="input-field" type="email" required placeholder="name@domain.com" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
               </div>
+              
               <div>
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>SECURITY ACCESS PHRASE</label>
                 <div style={{ position: "relative" }}>
-                  <input
-                    className="input-field"
-                    type={showPassword ? "text" : "password"}
-                    required
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    style={{ paddingRight: 40 }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(prev => !prev)}
-                    style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
+                  <input className="input-field" type={showPassword ? "text" : "password"} required placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box", paddingRight: 40 }} />
+                  <button type="button" onClick={() => setShowPassword(prev => !prev)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#64748b", cursor: "pointer", display: "flex", alignItems: "center", padding: 0 }}>
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
@@ -710,16 +637,9 @@ export default function LandingPage() {
                 <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.1)" }} />
               </div>
 
-              <button
-                type="button"
-                onClick={handleGoogleAuth}
-                style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#fff", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}
-              >
+              <button type="button" onClick={handleGoogleAuth} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "12px", padding: "12px 16px", color: "#fff", fontSize: "13px", fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, cursor: "pointer" }}>
                 <svg width="16" height="16" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l3.66-2.85z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.85c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92(1.35?):8.09z" />
                 </svg>
                 Continue with Google
               </button>
@@ -751,9 +671,7 @@ export default function LandingPage() {
                 {forgotStep === "sent" ? "Reset Link Dispatched" : "Reset Access Phrase"}
               </h3>
               <p style={{ fontSize: 12, color: "#64748b", lineHeight: 1.6 }}>
-                {forgotStep === "sent"
-                  ? `A reset link has been sent to ${forgotEmail}. Check your inbox.`
-                  : "Enter your registered email and we'll dispatch a secure reset link."}
+                {forgotStep === "sent" ? `A reset link has been sent to ${forgotEmail}. Check your inbox.` : "Enter your registered email and we'll dispatch a secure reset link."}
               </p>
             </div>
 
@@ -761,174 +679,106 @@ export default function LandingPage() {
               <form onSubmit={handleForgotSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>REGISTERED EMAIL ADDRESS</label>
-                  <input className="input-field" type="email" required placeholder="name@domain.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} />
+                  <input className="input-field" type="email" required placeholder="name@domain.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={forgotLoading}
-                  style={{ marginTop: 4, width: "100%", fontSize: 13, opacity: forgotLoading ? 0.7 : 1, cursor: forgotLoading ? "not-allowed" : "pointer" }}
-                >
+                <button type="submit" className="btn-primary" disabled={forgotLoading} style={{ marginTop: 4, width: "100%", fontSize: 13, opacity: forgotLoading ? 0.7 : 1, cursor: forgotLoading ? "not-allowed" : "pointer" }}>
                   {forgotLoading ? "Dispatching Link..." : "Send Reset Link →"}
                 </button>
                 <div style={{ textAlign: "center" }}>
-                  <button type="button" onClick={handleBackToLogin} style={{ background: "none", border: "none", color: "#60a5fa", fontWeight: 600, cursor: "pointer", fontSize: 12 }}>
-                    ← Back to Sign In
-                  </button>
+                  <button type="button" onClick={handleBackToLogin} style={{ background: "none", border: "none", color: "#60a5fa", fontWeight: 600, cursor: "pointer", fontSize: 12 }}>← Back to Sign In</button>
                 </div>
               </form>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div style={{ background: "rgba(37,99,235,0.06)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 12, padding: "16px", textAlign: "center" }}>
                   <div style={{ fontSize: 28, marginBottom: 8 }}>📬</div>
-                  <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-                    If this email is registered, you'll receive a reset link shortly. Check your spam folder if it doesn't arrive within a few minutes.
-                  </p>
+                  <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>If this email is registered, you'll receive a reset link shortly. Check spam folder too.</p>
                 </div>
-                <button type="button" className="btn-primary" onClick={handleBackToLogin} style={{ width: "100%", fontSize: 13 }}>
-                  ← Return to Sign In
-                </button>
+                <button type="button" className="btn-primary" onClick={handleBackToLogin} style={{ width: "100%", fontSize: 13 }}>← Return to Sign In</button>
               </div>
             )}
           </div>
         </div>
       )}
 
-      {/* FOOTER SECTION */}
+     {/* CORPORATE FOOTER SECTION */}
       <footer style={{ background: "#030712", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "80px", paddingTop: "60px", paddingBottom: "20px", position: "relative", zIndex: 2 }}>
         <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 6%" }}>
-          {/* FOOTER CONTENT GRID */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 40, marginBottom: 60 }}>
-            {/* ABOUT US SECTION */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 40, marginBottom: 60 }}>
+
+            {/* Brand Column */}
             <div style={{ textAlign: "left" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Heart size={16} style={{ color: "#ffffff" }} />
                 </div>
-                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>Sehat Sathi</h4>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#ffffff", margin: 0 }}>SehatSathi</h4>
               </div>
-              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7, marginBottom: 16 }}>
-                एक comprehensive healthcare solution जो आपके medical reports को समझना आसान बनाता है। AI-powered analysis के साथ आपके health को track करें।
+              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7, marginBottom: 0 }}>
+                A comprehensive AI-powered healthcare platform designed to simplify medical report interpretation, connect patients with verified doctors, and make quality healthcare accessible to every Indian.
               </p>
-              <div style={{ display: "flex", gap: 12 }}>
-                {[{ icon: "f", link: "#" }, { icon: "𝕏", link: "#" }, { icon: "in", link: "#" }].map((social, i) => (
-                  <a key={i} href={social.link} style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#60a5fa", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "all 0.3s" }}>
-                    {social.icon}
-                  </a>
-                ))}
-              </div>
             </div>
 
-            {/* SERVICES SECTION */}
+            {/* Services Column */}
             <div style={{ textAlign: "left" }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>Services</h4>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  { title: "AI Report Analysis", desc: "Medical reports को समझें instantly" },
-                  { title: "Doctor Consultation", desc: "Verified doctors से online consult करें" },
-                  { title: "Hospital Appointments", desc: "आसानी से appointments book करें" },
-                  { title: "Blood Donor Network", desc: "Emergency में blood donors खोजें" }
-                ].map((service, i) => (
-                  <li key={i} style={{ cursor: "pointer" }}>
-                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
-                      {service.title}
-                    </a>
-                  </li>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#ffffff", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 16px 0" }}>Services</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
+                {["AI Report Analysis", "Doctor Consultation", "Hospital Appointments", "Blood Donor Network", "Medicine Assistance"].map((title, i) => (
+                  <li key={i}><a href="#" style={{ fontSize: 13, color: "#64748b", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = "#94a3b8"} onMouseLeave={e => e.target.style.color = "#64748b"}>{title}</a></li>
                 ))}
               </ul>
             </div>
 
-            {/* ABOUT US SECTION */}
+            {/* Company Column */}
             <div style={{ textAlign: "left" }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>About Us</h4>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  "Humare mission",
-                  "Team members",
-                  "Blog & Updates",
-                  "Press Kit",
-                  "Careers"
-                ].map((link, i) => (
-                  <li key={i}>
-                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
-                      {link}
-                    </a>
-                  </li>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#ffffff", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 16px 0" }}>Company</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
+                {["Our Mission", "Meet the Team", "Blog & Updates", "Press Kit", "Careers"].map((link, i) => (
+                  <li key={i}><a href="#" style={{ fontSize: 13, color: "#64748b", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = "#94a3b8"} onMouseLeave={e => e.target.style.color = "#64748b"}>{link}</a></li>
                 ))}
               </ul>
             </div>
 
-            {/* CONTACT & LEGAL SECTION */}
+            {/* Legal Column */}
             <div style={{ textAlign: "left" }}>
-              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>Legal & Support</h4>
-              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
-                {[
-                  { title: "Privacy Policy", icon: "🔒" },
-                  { title: "Terms of Service", icon: "📋" },
-                  { title: "Contact Support", icon: "💬" },
-                  { title: "FAQs", icon: "❓" },
-                  { title: "Security", icon: "🛡️" }
-                ].map((item, i) => (
-                  <li key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                    <span style={{ fontSize: 12 }}>{item.icon}</span>
-                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
-                      {item.title}
-                    </a>
-                  </li>
+              <h4 style={{ fontSize: 12, fontWeight: 700, color: "#ffffff", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 16px 0" }}>Legal & Support</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12, padding: 0, margin: 0 }}>
+                {["Privacy Policy", "Terms of Service", "Contact Support", "FAQs", "Security"].map((title, i) => (
+                  <li key={i}><a href="#" style={{ fontSize: 13, color: "#64748b", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = "#94a3b8"} onMouseLeave={e => e.target.style.color = "#64748b"}>{title}</a></li>
                 ))}
               </ul>
             </div>
           </div>
 
-          {/* FOOTER DIVIDER */}
-          <div style={{ borderTop: "1px solid rgba(255,255,255,0.03)", paddingTop: 32, paddingBottom: 20 }}>
-            {/* DEVELOPER INFO */}
-            <div style={{ background: "rgba(37,99,235,0.03)", border: "1px solid rgba(37,99,235,0.1)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+          {/* Divider + Team Info */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", paddingTop: 32, paddingBottom: 20 }}>
+            <div style={{ background: "rgba(37,99,235,0.03)", border: "1px solid rgba(37,99,235,0.1)", borderRadius: 12, padding: 20, marginBottom: 24 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
                 <div style={{ textAlign: "left" }}>
-                  <h5 style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>👨‍💻 Developed By</h5>
-                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
-                    <strong style={{ color: "#ffffff" }}>Amit Dubey</strong> - Full Stack Developer<br />
-                    एक passionate developer जो healthcare technology में innovate करता है।
+                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px 0" }}>Co-Founder & Lead Engineer</h5>
+                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
+                    <strong style={{ color: "#ffffff" }}>Amit Dubey</strong> — AI & Full-Stack Engineer
+                    <br />Building technology-driven healthcare solutions to improve patient outcomes across India.
                   </p>
                 </div>
                 <div style={{ textAlign: "left" }}>
-                  <h5 style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>🎯 Created For</h5>
-                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
-                    आम भारतीय जनता के लिए जो medical reports को समझना चाहते हैं।<br />
-                    <strong style={{ color: "#ffffff" }}>Healthcare को accessible और transparent बनाने के लिए।</strong>
+                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px 0" }}>Our Mission</h5>
+                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
+                    Empowering every Indian patient to understand their health data with clarity.
+                    <br /><strong style={{ color: "#ffffff" }}>Making healthcare accessible, transparent, and intelligent — for everyone.</strong>
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* BOTTOM FOOTER */}
+            {/* Bottom Bar */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.03)" }}>
-              <div style={{ textAlign: "left" }}>
-                <p style={{ fontSize: 12, color: "#475569" }}>
-                  © 2026 <span style={{ color: "#60a5fa", fontWeight: 700 }}>Sehat Sathi</span>. सभी अधिकार सुरक्षित हैं।
-                </p>
-              </div>
-              <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-                {[
-                  { label: "GitHub", link: "#" },
-                  { label: "Documentation", link: "#" },
-                  { label: "Status", link: "#" }
-                ].map((link, i) => (
-                  <a key={i} href={link.link} style={{ fontSize: 12, color: "#64748b", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#64748b"}>
-                    {link.label}
-                  </a>
-                ))}
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <p style={{ fontSize: 11, color: "#475569" }}>
-                  Made with <span style={{ color: "#ef4444" }}>❤️</span> for better healthcare
-                </p>
-              </div>
+              <p style={{ fontSize: 12, color: "#334155", margin: 0 }}>© 2026 <span style={{ color: "#60a5fa", fontWeight: 700 }}>SehatSathi</span>. All rights reserved.</p>
+              <p style={{ fontSize: 11, color: "#334155", margin: 0 }}>Crafted with <span style={{ color: "#ef4444" }}>❤️</span> to advance healthcare in India.</p>
             </div>
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
