@@ -793,6 +793,142 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+
+      {/* FOOTER SECTION */}
+      <footer style={{ background: "#030712", borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: "80px", paddingTop: "60px", paddingBottom: "20px", position: "relative", zIndex: 2 }}>
+        <div style={{ maxWidth: 1140, margin: "0 auto", padding: "0 6%" }}>
+          {/* FOOTER CONTENT GRID */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 40, marginBottom: 60 }}>
+            {/* ABOUT US SECTION */}
+            <div style={{ textAlign: "left" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Heart size={16} style={{ color: "#ffffff" }} />
+                </div>
+                <h4 style={{ fontSize: 16, fontWeight: 800, color: "#ffffff" }}>Sehat Sathi</h4>
+              </div>
+              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7, marginBottom: 16 }}>
+                एक comprehensive healthcare solution जो आपके medical reports को समझना आसान बनाता है। AI-powered analysis के साथ आपके health को track करें।
+              </p>
+              <div style={{ display: "flex", gap: 12 }}>
+                {[{ icon: "f", link: "#" }, { icon: "𝕏", link: "#" }, { icon: "in", link: "#" }].map((social, i) => (
+                  <a key={i} href={social.link} style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(37,99,235,0.1)", border: "1px solid rgba(37,99,235,0.2)", display: "flex", alignItems: "center", justifyContent: "center", color: "#60a5fa", fontSize: 14, fontWeight: 700, textDecoration: "none", transition: "all 0.3s" }}>
+                    {social.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* SERVICES SECTION */}
+            <div style={{ textAlign: "left" }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>Services</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { title: "AI Report Analysis", desc: "Medical reports को समझें instantly" },
+                  { title: "Doctor Consultation", desc: "Verified doctors से online consult करें" },
+                  { title: "Hospital Appointments", desc: "आसानी से appointments book करें" },
+                  { title: "Blood Donor Network", desc: "Emergency में blood donors खोजें" }
+                ].map((service, i) => (
+                  <li key={i} style={{ cursor: "pointer" }}>
+                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
+                      {service.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* ABOUT US SECTION */}
+            <div style={{ textAlign: "left" }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>About Us</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  "Humare mission",
+                  "Team members",
+                  "Blog & Updates",
+                  "Press Kit",
+                  "Careers"
+                ].map((link, i) => (
+                  <li key={i}>
+                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
+                      {link}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* CONTACT & LEGAL SECTION */}
+            <div style={{ textAlign: "left" }}>
+              <h4 style={{ fontSize: 14, fontWeight: 700, color: "#ffffff", marginBottom: 20, letterSpacing: "0.05em", textTransform: "uppercase" }}>Legal & Support</h4>
+              <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 12 }}>
+                {[
+                  { title: "Privacy Policy", icon: "🔒" },
+                  { title: "Terms of Service", icon: "📋" },
+                  { title: "Contact Support", icon: "💬" },
+                  { title: "FAQs", icon: "❓" },
+                  { title: "Security", icon: "🛡️" }
+                ].map((item, i) => (
+                  <li key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    <span style={{ fontSize: 12 }}>{item.icon}</span>
+                    <a href="#" style={{ fontSize: 13, color: "#94a3b8", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#94a3b8"}>
+                      {item.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* FOOTER DIVIDER */}
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.03)", paddingTop: 32, paddingBottom: 20 }}>
+            {/* DEVELOPER INFO */}
+            <div style={{ background: "rgba(37,99,235,0.03)", border: "1px solid rgba(37,99,235,0.1)", borderRadius: 12, padding: 20, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                <div style={{ textAlign: "left" }}>
+                  <h5 style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>👨‍💻 Developed By</h5>
+                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
+                    <strong style={{ color: "#ffffff" }}>Amit Dubey</strong> - Full Stack Developer<br />
+                    एक passionate developer जो healthcare technology में innovate करता है।
+                  </p>
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <h5 style={{ fontSize: 12, fontWeight: 700, color: "#60a5fa", marginBottom: 8, letterSpacing: "0.05em", textTransform: "uppercase" }}>🎯 Created For</h5>
+                  <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>
+                    आम भारतीय जनता के लिए जो medical reports को समझना चाहते हैं।<br />
+                    <strong style={{ color: "#ffffff" }}>Healthcare को accessible और transparent बनाने के लिए।</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* BOTTOM FOOTER */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.03)" }}>
+              <div style={{ textAlign: "left" }}>
+                <p style={{ fontSize: 12, color: "#475569" }}>
+                  © 2026 <span style={{ color: "#60a5fa", fontWeight: 700 }}>Sehat Sathi</span>. सभी अधिकार सुरक्षित हैं।
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
+                {[
+                  { label: "GitHub", link: "#" },
+                  { label: "Documentation", link: "#" },
+                  { label: "Status", link: "#" }
+                ].map((link, i) => (
+                  <a key={i} href={link.link} style={{ fontSize: 12, color: "#64748b", textDecoration: "none", transition: "color 0.3s" }} onMouseEnter={e => e.target.style.color = "#60a5fa"} onMouseLeave={e => e.target.style.color = "#64748b"}>
+                    {link.label}
+                  </a>
+                ))}
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 11, color: "#475569" }}>
+                  Made with <span style={{ color: "#ef4444" }}>❤️</span> for better healthcare
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </>
   );
 }
