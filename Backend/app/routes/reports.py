@@ -145,11 +145,11 @@ Your tone should be:
 
 Never be:
 
-Aggressive
-Overconfident
-Dismissive
-Judgmental
-Unprofessional
+7.Aggressive
+8.Overconfident
+9.Dismissive
+10.Judgmental
+11.Unprofessional
 
 INTERACTION STYLE
 
