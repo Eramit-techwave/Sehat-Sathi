@@ -1,6 +1,83 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Activity, FileText, Sparkles, BarChart3, AlertTriangle, Key, Upload, Heart, Zap, CheckCircle2, Award, Eye, EyeOff } from "lucide-react";
+import { Activity, FileText, Sparkles, BarChart3, AlertTriangle, Key, Upload, Heart, Zap, CheckCircle2, Award, Eye, EyeOff, Stethoscope, Clock, Pill, Droplet, Users, MapPin, Phone, Calendar, MessageSquare, Video, Headphones, Shield, Wallet, TrendingUp, AlertCircle as AlertIcon } from "lucide-react";
+
+const WHY_CHOOSE_FEATURES = [
+  {
+    icon: "🔬",
+    title: "AI Report Analysis",
+    desc: "Understand medical reports instantly.",
+    color: "#3b82f6",
+    gradient: "rgba(59,130,246,0.1)"
+  },
+  {
+    icon: "👨‍⚕️",
+    title: "Trusted Doctor Consultation",
+    desc: "Connect with verified doctors online.",
+    color: "#60a5fa",
+    gradient: "rgba(96,165,250,0.1)"
+  },
+  {
+    icon: "📅",
+    title: "Easy Appointment Booking",
+    desc: "Skip hospital queues and save time.",
+    color: "#2563eb",
+    gradient: "rgba(37,99,235,0.1)"
+  },
+  {
+    icon: "🩸",
+    title: "Blood Donor Network",
+    desc: "Find blood donors during emergencies.",
+    color: "#ef4444",
+    gradient: "rgba(239,68,68,0.1)"
+  },
+  {
+    icon: "💊",
+    title: "Medicine Assistance",
+    desc: "Locate nearby medical stores and medicines.",
+    color: "#f59e0b",
+    gradient: "rgba(245,158,11,0.1)"
+  },
+  {
+    icon: "🔐",
+    title: "Secure Health Records",
+    desc: "Keep all reports organized safely.",
+    color: "#22c55e",
+    gradient: "rgba(34,197,94,0.1)"
+  }
+];
+
+const DOCTOR_FEATURES = [
+  { icon: <Video size={20} />, label: "Video Consultation", desc: "Face-to-face with specialists" },
+  { icon: <Headphones size={20} />, label: "Audio Consultation", desc: "Quick voice consultations" },
+  { icon: <MessageSquare size={20} />, label: "Chat Consultation", desc: "Text-based medical advice" },
+  { icon: <Shield size={20} />, label: "Verified Profiles", desc: "Certified & experienced doctors" },
+  { icon: <Clock size={20} />, label: "Instant Booking", desc: "No waiting, book immediately" },
+  { icon: <TrendingUp size={20} />, label: "Specialist Doctors", desc: "Find doctors by specialty" }
+];
+
+const APPOINTMENT_PROCESS = [
+  { step: "1", title: "Search Hospital", desc: "Find hospitals near you" },
+  { step: "2", title: "Choose Doctor", desc: "Select your preferred doctor" },
+  { step: "3", title: "Pick Time Slot", desc: "Choose convenient time" },
+  { step: "4", title: "Book Appointment", desc: "Confirm and get details" }
+];
+
+const HOW_IT_WORKS_STEPS = [
+  { step: "01", title: "Upload Medical Report", icon: "📥", desc: "Share your lab reports securely" },
+  { step: "02", title: "AI Analyzes Report", icon: "🤖", desc: "Our AI processes your data" },
+  { step: "03", title: "Get Health Insights", icon: "📊", desc: "Understand your health status" },
+  { step: "04", title: "Consult Doctor", icon: "👨‍⚕️", desc: "Talk to verified specialists" },
+  { step: "05", title: "Book Appointment", icon: "📅", desc: "Schedule follow-up visits" },
+  { step: "06", title: "Track Progress", icon: "📈", desc: "Monitor your health journey" }
+];
+
+const BLOOD_DONOR_INFO = [
+  { icon: <Users size={18} />, title: "Register as Donor", desc: "Help save lives in your community" },
+  { icon: <AlertIcon size={18} />, title: "Request Blood", desc: "Find donors during emergencies" },
+  { icon: <MapPin size={18} />, title: "Search Donors", desc: "Filter by location & blood group" },
+  { icon: <Heart size={18} />, title: "Emergency Support", desc: "24/7 emergency blood access" }
+];
 
 const HEALTH_DATA = {
   diabetes: {
@@ -70,6 +147,7 @@ const STEPS = [
   { n: "04", title: "Review Assessment", desc: "Access simplified parameter explanations and view long-term digital health trends." },
 ];
 
+
 export default function LandingPage() {
   const { loginNode, registerNode, loginWithGoogle, resetPassword } = useAuth();
   const [authOpen, setAuthOpen] = useState(false);
@@ -100,11 +178,11 @@ export default function LandingPage() {
     if (authMode === "signup") {
       const result = await registerNode(name, email, password);
       if (result.success) {
-        alert("🎉 Account node created successfully! Please Sign In with your credentials now.");
+        alert("Your  Account has been  created successfully! Please Sign In with your credentials now.");
         setAuthMode("login");
         setPassword("");
       } else {
-        alert(`❌ Signup Failed: ${result.error}`);
+        alert(`❌ Opps! Signup Failed: ${result.error}`);
       }
     } else {
       const result = await loginNode(email, password);
@@ -112,7 +190,7 @@ export default function LandingPage() {
         setAuthOpen(false);
         setEmail(""); setPassword(""); setName("");
       } else {
-        alert(`❌ Authentication Failed: ${result.error}`);
+        alert(`❌ Authentication Failed Try again : ${result.error}`);
       }
     }
   };
@@ -374,6 +452,195 @@ export default function LandingPage() {
           <button className="btn-primary" style={{ fontSize: 14, padding: "15px 36px" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
             Initialize Architecture Gateway
           </button>
+        </div>
+      </section>
+
+      {/* WHY CHOOSE SEHAT SATHI SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Platform Features</div>
+          <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 44px)", color: "#ffffff", marginBottom: 12 }}>
+            Why Choose Sehat Sathi?
+          </h2>
+          <p style={{ color: "#64748b", fontSize: 14, maxWidth: 580, margin: "0 auto" }}>Complete healthcare ecosystem designed to make your medical journey seamless and transparent.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
+          {WHY_CHOOSE_FEATURES.map((feature, idx) => (
+            <div key={idx} className="card-hover" style={{ borderRadius: 16, padding: "28px", background: `${feature.gradient}80`, border: `1px solid ${feature.color}20`, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", top: -20, right: -20, width: 120, height: 120, borderRadius: "50%", background: feature.gradient, filter: "blur(40px)", zIndex: 0 }} />
+              <div style={{ position: "relative", zIndex: 1 }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>{feature.icon}</div>
+                <h4 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>{feature.title}</h4>
+                <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>{feature.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* DOCTOR CONSULTATION SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ background: "linear-gradient(135deg, #0a1428, #0e1a38)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 24, padding: "50px 40px", overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 50, alignItems: "center" }}>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>Healthcare Service</div>
+              <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 38px)", color: "#ffffff", lineHeight: 1.2, marginBottom: 16 }}>
+                Consult Experienced <br />Doctors
+              </h2>
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, marginBottom: 24 }}>
+                Connect with verified healthcare professionals from the comfort of your home. Choose your preferred consultation method and get medical advice instantly.
+              </p>
+              <button className="btn-primary" style={{ fontSize: 14, padding: "14px 32px", marginBottom: 24 }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
+                Consult Now
+              </button>
+              <div style={{ fontSize: 12, color: "#64748b" }}>
+                ✓ Verified doctors | ✓ Confidential | ✓ Fast response
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {DOCTOR_FEATURES.map((feature, idx) => (
+                <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "18px", textAlign: "center" }}>
+                  <div style={{ color: "#60a5fa", marginBottom: 8, display: "flex", justifyContent: "center" }}>{feature.icon}</div>
+                  <h5 style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>{feature.label}</h5>
+                  <p style={{ fontSize: 11, color: "#64748b" }}>{feature.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* HOSPITAL APPOINTMENT SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Seamless Booking</div>
+          <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 44px)", color: "#ffffff" }}>
+            Book Hospital Appointments<br />Without Waiting
+          </h2>
+          <p style={{ color: "#64748b", fontSize: 14, maxWidth: 580, margin: "20px auto 0" }}>Skip the queues. Get instant confirmation for your hospital visits.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 40 }}>
+          {APPOINTMENT_PROCESS.map((item, idx) => (
+            <div key={idx} style={{ position: "relative", textAlign: "center" }}>
+              <div style={{ background: "linear-gradient(135deg, #2563eb, #1d4ed8)", width: 60, height: 60, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 24, fontWeight: 800, color: "#ffffff" }}>
+                {item.step}
+              </div>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", marginBottom: 6 }}>{item.title}</h4>
+              <p style={{ fontSize: 12, color: "#64748b" }}>{item.desc}</p>
+              {idx < 3 && (
+                <div style={{ position: "absolute", bottom: -40, left: "50%", transform: "translateX(-50%)", width: "100%", textAlign: "center", color: "#2563eb", fontSize: 20 }}>↓</div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <button className="btn-primary" style={{ fontSize: 14, padding: "14px 32px" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
+            Book Appointment
+          </button>
+        </div>
+      </section>
+
+      {/* MEDICAL STORE SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ background: "linear-gradient(135deg, rgba(245,158,11,0.08), rgba(217,119,6,0.03))", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 24, padding: "50px 40px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 50, alignItems: "center" }}>
+            <div style={{ order: 2, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              {[
+                { icon: "🏪", title: "Nearby Stores", desc: "Medical stores close to you" },
+                { icon: "🔍", title: "Availability Check", desc: "Check medicine stock instantly" },
+                { icon: "📝", title: "Prescription Upload", desc: "Upload & verify prescriptions" },
+                { icon: "🚚", title: "Fast Delivery", desc: "Quick home delivery support" }
+              ].map((item, idx) => (
+                <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "18px", textAlign: "center" }}>
+                  <div style={{ fontSize: 28, marginBottom: 8 }}>{item.icon}</div>
+                  <h5 style={{ fontSize: 13, fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>{item.title}</h5>
+                  <p style={{ fontSize: 11, color: "#64748b" }}>{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ order: 1, textAlign: "left" }}>
+              <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 12 }}>Pharmacy Service</div>
+              <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 38px)", color: "#ffffff", lineHeight: 1.2, marginBottom: 16 }}>
+                Medicines At Your Fingertips
+              </h2>
+              <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.7, marginBottom: 24 }}>
+                Find nearby medical stores, check medicine availability, and upload prescriptions. Get your medicines delivered quickly and safely.
+              </p>
+              <button className="btn-primary" style={{ fontSize: 14, padding: "14px 32px" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
+                Find Medicines
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* BLOOD DONOR NETWORK SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Emergency Support</div>
+          <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 44px)", color: "#ffffff", marginBottom: 16 }}>
+            Find Blood Donors When<br />You Need Them
+          </h2>
+          <p style={{ fontSize: 14, color: "#94a3b8", maxWidth: 600, margin: "0 auto" }}>
+            Connect with verified blood donors in your area. Request blood during emergencies or register as a donor to help save lives.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24, marginBottom: 32 }}>
+          {BLOOD_DONOR_INFO.map((info, idx) => (
+            <div key={idx} className="card-hover" style={{ borderRadius: 16, padding: "28px", background: "rgba(239,68,68,0.02)", border: "1px solid rgba(239,68,68,0.15)", textAlign: "center" }}>
+              <div style={{ color: "#ef4444", marginBottom: 16, display: "flex", justifyContent: "center", background: "rgba(239,68,68,0.1)", width: 48, height: 48, borderRadius: "50%", alignItems: "center", margin: "0 auto 16px" }}>
+                {info.icon}
+              </div>
+              <h4 style={{ fontSize: 16, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>{info.title}</h4>
+              <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6 }}>{info.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ background: "rgba(239,68,68,0.03)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 20, padding: "40px", textAlign: "center" }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: "#ffffff", marginBottom: 12 }}>Search Blood Donors</h3>
+          <p style={{ fontSize: 13, color: "#94a3b8", marginBottom: 24 }}>Filter donors by blood group, location, and availability status</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24, maxWidth: 600, margin: "0 auto 24px" }}>
+            {["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"].map((bg, idx) => (
+              <button key={idx} className="btn-ghost" style={{ fontSize: 13, fontWeight: 600, padding: "10px 16px", cursor: "pointer" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
+                {bg}
+              </button>
+            ))}
+          </div>
+          <button className="btn-primary" style={{ fontSize: 14, padding: "14px 32px" }} onClick={() => { setAuthMode("signup"); setAuthOpen(true); }}>
+            Find Donors Now
+          </button>
+        </div>
+      </section>
+
+      {/* HOW SEHAT SATHI WORKS SECTION */}
+      <section style={{ position: "relative", zIndex: 2, maxWidth: 1140, margin: "0 auto 80px", padding: "60px 6%" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>Complete Journey</div>
+          <h2 className="serif" style={{ fontSize: "clamp(26px, 3.5vw, 44px)", color: "#ffffff" }}>
+            How Sehat Sathi Works
+          </h2>
+          <p style={{ color: "#64748b", fontSize: 14, maxWidth: 580, margin: "20px auto 0" }}>From upload to health tracking, we guide you through every step.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 24 }}>
+          {HOW_IT_WORKS_STEPS.map((item, idx) => (
+            <div key={idx} className="card-hover" style={{ borderRadius: 16, padding: "28px", textAlign: "center", position: "relative" }}>
+              <div style={{ position: "absolute", top: 12, right: 16, fontSize: 11, color: "#1d4ed8", fontFamily: "monospace", fontWeight: 700 }}>{item.step}</div>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>{item.icon}</div>
+              <h4 style={{ fontSize: 15, fontWeight: 700, color: "#ffffff", marginBottom: 8 }}>{item.title}</h4>
+              <p style={{ fontSize: 12.5, color: "#64748b", lineHeight: 1.65 }}>{item.desc}</p>
+              {idx < HOW_IT_WORKS_STEPS.length - 1 && (
+                <div style={{ position: "absolute", bottom: -24, left: "50%", color: "#2563eb", fontSize: 20 }}>↓</div>
+              )}
+            </div>
+          ))}
         </div>
       </section>
 

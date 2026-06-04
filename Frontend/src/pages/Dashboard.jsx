@@ -2,27 +2,24 @@ import { useState } from "react";
 import { 
   Shield, CheckCircle2, RefreshCw, Zap, Heart, Award, Upload, FileText, 
   Loader2, AlertCircle, Bot, Send, Activity, ArrowUpRight, ArrowDownRight,
-  User, Save, Edit2, History
+  User, Save, Edit2, History, Stethoscope, Calendar, Pill, Droplet,
+  Phone, MapPin, Clock, MessageSquare, Video, Users, AlertCircle as AlertIcon
 } from "lucide-react";
 
 export default function Dashboard() {
   const [dragActive, setDragActive] = useState(false);
-  const [uploadState, setUploadState] = useState("idle"); // "idle" | "loading" | "success" | "error"
+  const [uploadState, setUploadState] = useState("idle");
   const [statusMessage, setStatusMessage] = useState("");
-  
-  // ── REAL TIME EXTRACTION STATE SYSTEM ──
   const [extractedData, setExtractedData] = useState(null);
-
-  // ── LIVE AI INTERACTION CHAT TERMINAL STATES ──
   const [chatInput, setChatInput] = useState("");
   const [chatHistory, setChatHistory] = useState([
     { role: "assistant", text: "Hello Amit! Report upload kijiye, main uski poori deep scanning karke aapko har issue, high/low range aur diet matrix samjha dunga." }
   ]);
   const [chatLoading, setChatLoading] = useState(false);
-
-  // ── 🌟 PROFILE & HISTORY CONTROL STATES ──
-  const [currentView, setCurrentView] = useState("dashboard"); // "dashboard" | "profile" | "history"
+  const [currentView, setCurrentView] = useState("dashboard");
   const [isEditing, setIsEditing] = useState(false);
+  const [activeModule, setActiveModule] = useState(null);
+  
   const [profileData, setProfileData] = useState({
     fullName: "Amit Dubey",
     email: "amitdubey04102004@gmail.com",
@@ -34,11 +31,26 @@ export default function Dashboard() {
     healthScore: "82/100"
   });
 
-  // Mock static list referencing image data layout
   const [savedReports, setSavedReports] = useState([
     { name: "Blood Report Summary Ingestion", date: "2026-06-01", type: "Full CBC Ledger" },
     { name: "Thyroid Panel Profiling Matrix", date: "2026-05-25", type: "TSH Variant Analysis" },
     { name: "Lipid Profile Diagnostic Block", date: "2026-05-10", type: "Cholesterol Data" }
+  ]);
+
+  const [donorRegistrations, setDonorRegistrations] = useState([
+    { id: 1, name: "Raj Kumar", bloodGroup: "O+", city: "Ahmedabad", availability: "Available", lastDonation: "2026-04-15" },
+    { id: 2, name: "Priya Sharma", bloodGroup: "A+", city: "Ahmedabad", availability: "Available", lastDonation: "2026-05-20" },
+    { id: 3, name: "Vikas Singh", bloodGroup: "B+", city: "Ahmedabad", availability: "Not Available", lastDonation: "2026-06-01" }
+  ]);
+
+  const [bloodRequests, setBloodRequests] = useState([
+    { id: 1, patientName: "Arjun Patel", bloodGroup: "O+", hospital: "Apollo Hospital", urgency: "High", status: "Pending" },
+    { id: 2, patientName: "Neha Gupta", bloodGroup: "A-", hospital: "Fortis Healthcare", urgency: "Medium", status: "Matched" }
+  ]);
+
+  const [appointments, setAppointments] = useState([
+    { id: 1, hospital: "Apollo Hospital", doctor: "Dr. Rajesh Kumar", date: "2026-06-15", time: "10:30 AM", type: "General Checkup" },
+    { id: 2, hospital: "Fortis Healthcare", doctor: "Dr. Priya Singh", date: "2026-06-20", time: "02:00 PM", type: "Cardiology" }
   ]);
 
   const API_BASE_URL = "http://localhost:8000";
@@ -55,9 +67,7 @@ export default function Dashboard() {
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      processFile(e.target.files[0]);
-    }
+    if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
   };
 
   const processFile = async (file) => {
@@ -96,7 +106,6 @@ export default function Dashboard() {
       setExtractedData(payload);
       triggerAIBotGreeting(payload);
 
-      // Add to dynamic history log locally
       const today = new Date().toISOString().split('T')[0];
       setSavedReports(prev => [
         { name: file.name.split('.')[0] + " Analysis Ingestion", date: today, type: "Dynamic Core Scan" },
@@ -182,6 +191,17 @@ export default function Dashboard() {
 
   const highParametersList = extractedData ? extractedData.raw_parameters.filter(p => p.status.toLowerCase().includes("high")).map(p => p.name) : [];
   const lowParametersList = extractedData ? extractedData.raw_parameters.filter(p => p.status.toLowerCase().includes("low")).map(p => p.name) : [];
+
+  const DASHBOARD_MODULES = [
+    { id: "reports", icon: <FileText size={18} />, title: "AI Report Analysis", desc: "Upload & analyze your medical reports", color: "#3b82f6", bgColor: "rgba(59,130,246,0.1)", borderColor: "rgba(59,130,246,0.2)" },
+    { id: "myreports", icon: <Activity size={18} />, title: "My Reports", desc: "View all your uploaded reports", color: "#60a5fa", bgColor: "rgba(96,165,250,0.1)", borderColor: "rgba(96,165,250,0.2)" },
+    { id: "doctor", icon: <Stethoscope size={18} />, title: "Doctor Consultation", desc: "Consult with verified doctors", color: "#2563eb", bgColor: "rgba(37,99,235,0.1)", borderColor: "rgba(37,99,235,0.2)" },
+    { id: "appointments", icon: <Calendar size={18} />, title: "Hospital Appointments", desc: "Book & manage appointments", color: "#8b5cf6", bgColor: "rgba(139,92,246,0.1)", borderColor: "rgba(139,92,246,0.2)" },
+    { id: "pharmacy", icon: <Pill size={18} />, title: "Medicine Finder", desc: "Find nearby pharmacies & medicines", color: "#f59e0b", bgColor: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.2)" },
+    { id: "blood", icon: <Droplet size={18} />, title: "Blood Donor Network", desc: "Find donors & manage requests", color: "#ef4444", bgColor: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.2)" },
+    { id: "emergency", icon: <AlertIcon size={18} />, title: "Emergency Contacts", desc: "Quick access to emergency services", color: "#ec4899", bgColor: "rgba(236,72,153,0.1)", borderColor: "rgba(236,72,153,0.2)" },
+    { id: "health", icon: <Heart size={18} />, title: "Health History", desc: "Track your health journey", color: "#22c55e", bgColor: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.2)" }
+  ];
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "40px 4%" }} className="fade-in">
@@ -310,8 +330,26 @@ export default function Dashboard() {
       )}
 
       {/* VIEW C: MAIN SYSTEM INTERACTIVE WORKSPACE */}
-      {currentView === "dashboard" && (
+      {currentView === "dashboard" && !activeModule && (
         <>
+          {/* DASHBOARD MODULES SECTION */}
+          <section style={{ marginBottom: 40 }}>
+            <div style={{ marginBottom: 32 }}>
+              <h3 className="serif" style={{ fontSize: "28px", color: "#fff", marginBottom: 8 }}>Healthcare Services</h3>
+              <p style={{ color: "#64748b", fontSize: "14px" }}>Access all your health management tools in one place</p>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+              {DASHBOARD_MODULES.map((module) => (
+                <div key={module.id} onClick={() => setActiveModule(module.id)} className="card-hover" style={{ borderRadius: 14, padding: "20px", background: module.bgColor, border: `1px solid ${module.borderColor}`, cursor: "pointer", textAlign: "left" }}>
+                  <div style={{ color: module.color, marginBottom: 12 }}>{module.icon}</div>
+                  <h4 style={{ fontSize: "14px", fontWeight: 700, color: "#ffffff", marginBottom: 4 }}>{module.title}</h4>
+                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>{module.desc}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           {/* Core Interactive Sandbox Panel Module */}
           <section style={{ marginBottom: 32 }}>
             <div className="fade-up" style={{ background: "linear-gradient(145deg, #090f22, #050914)", border: "1px solid rgba(37,99,235,0.1)", borderRadius: 24, padding: "36px 40px" }}>
@@ -458,6 +496,149 @@ export default function Dashboard() {
             )}
           </div>
         </>
+      )}
+
+      {/* MODULE DETAIL VIEWS */}
+      {activeModule === "doctor" && (
+        <div className="fade-up" style={{ textAlign: "left", marginBottom: 40 }}>
+          <button onClick={() => setActiveModule(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", padding: "8px 16px", borderRadius: 10, fontSize: "13px", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
+            ← Back to Dashboard
+          </button>
+          
+          <h2 className="serif" style={{ fontSize: "32px", color: "#fff", marginBottom: 24 }}>Doctor Consultation</h2>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 20, marginBottom: 32 }}>
+            {[
+              { icon: <Video size={20} />, title: "Video Consultation", desc: "Face-to-face with specialists", color: "#3b82f6" },
+              { icon: <MessageSquare size={20} />, title: "Chat Consultation", desc: "Text-based medical advice", color: "#60a5fa" },
+              { icon: <Phone size={20} />, title: "Audio Call", desc: "Quick voice consultations", color: "#2563eb" }
+            ].map((method, idx) => (
+              <div key={idx} style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 14, padding: "24px", textAlign: "center", cursor: "pointer" }} className="card-hover">
+                <div style={{ color: method.color, marginBottom: 12, display: "flex", justifyContent: "center" }}>{method.icon}</div>
+                <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#fff", marginBottom: 6 }}>{method.title}</h4>
+                <p style={{ fontSize: "12px", color: "#94a3b8" }}>{method.desc}</p>
+                <button className="btn-primary" style={{ fontSize: "12px", padding: "8px 16px", marginTop: 14 }}>Book Now</button>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ background: "rgba(37,99,235,0.03)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 14, padding: "24px" }}>
+            <h4 style={{ fontSize: "16px", fontWeight: 700, color: "#fff", marginBottom: 16 }}>Specialist Categories</h4>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
+              {["General Practitioner", "Cardiologist", "Dermatologist", "Endocrinologist", "Orthopedist", "Neurologist"].map((spec, idx) => (
+                <button key={idx} className="btn-ghost" style={{ fontSize: "13px", padding: "10px 16px", cursor: "pointer" }}>
+                  {spec}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeModule === "appointments" && (
+        <div className="fade-up" style={{ textAlign: "left", marginBottom: 40 }}>
+          <button onClick={() => setActiveModule(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", padding: "8px 16px", borderRadius: 10, fontSize: "13px", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
+            ← Back to Dashboard
+          </button>
+          
+          <h2 className="serif" style={{ fontSize: "32px", color: "#fff", marginBottom: 24 }}>Hospital Appointments</h2>
+          
+          <div style={{ background: "#070c19", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden", marginBottom: 24 }}>
+            {appointments.map((apt, idx) => (
+              <div key={idx} style={{ borderBottom: idx < appointments.length - 1 ? "1px solid rgba(255,255,255,0.02)" : "none", padding: "20px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
+                <div>
+                  <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#fff", margin: 0 }}>{apt.hospital}</h4>
+                  <p style={{ fontSize: "13px", color: "#94a3b8", margin: "4px 0 8px" }}>{apt.doctor} • {apt.type}</p>
+                  <div style={{ fontSize: "12px", color: "#64748b", display: "flex", gap: 12 }}>
+                    <span>📅 {apt.date}</span>
+                    <span>🕐 {apt.time}</span>
+                  </div>
+                </div>
+                <button className="btn-primary" style={{ fontSize: "12px", padding: "8px 16px" }}>View Details</button>
+              </div>
+            ))}
+          </div>
+
+          <button className="btn-primary" style={{ fontSize: "14px", padding: "12px 28px" }}>Book New Appointment</button>
+        </div>
+      )}
+
+      {activeModule === "blood" && (
+        <div className="fade-up" style={{ textAlign: "left", marginBottom: 40 }}>
+          <button onClick={() => setActiveModule(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", padding: "8px 16px", borderRadius: 10, fontSize: "13px", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
+            ← Back to Dashboard
+          </button>
+          
+          <h2 className="serif" style={{ fontSize: "32px", color: "#fff", marginBottom: 24 }}>Blood Donor Network</h2>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32 }}>
+            <div>
+              <h4 style={{ fontSize: "18px", fontWeight: 700, color: "#fff", marginBottom: 16 }}>Registered Donors</h4>
+              <div style={{ background: "#070c19", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden" }}>
+                {donorRegistrations.map((donor, idx) => (
+                  <div key={idx} style={{ borderBottom: idx < donorRegistrations.length - 1 ? "1px solid rgba(255,255,255,0.02)" : "none", padding: "16px 20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>{donor.name}</span>
+                      <span style={{ background: "#ef4444", color: "#fff", padding: "4px 10px", borderRadius: 6, fontSize: "12px", fontWeight: 600 }}>{donor.bloodGroup}</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 6px" }}>{donor.city} • Last: {donor.lastDonation}</p>
+                    <span style={{ display: "inline-block", background: donor.availability === "Available" ? "rgba(34,197,94,0.1)" : "rgba(107,114,128,0.1)", color: donor.availability === "Available" ? "#22c55e" : "#9ca3af", padding: "3px 10px", borderRadius: 6, fontSize: "11px", fontWeight: 600 }}>
+                      {donor.availability}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h4 style={{ fontSize: "18px", fontWeight: 700, color: "#fff", marginBottom: 16 }}>Blood Requests</h4>
+              <div style={{ background: "#070c19", border: "1px solid rgba(255,255,255,0.03)", borderRadius: 16, overflow: "hidden" }}>
+                {bloodRequests.map((req, idx) => (
+                  <div key={idx} style={{ borderBottom: idx < bloodRequests.length - 1 ? "1px solid rgba(255,255,255,0.02)" : "none", padding: "16px 20px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <span style={{ fontSize: "14px", fontWeight: 700, color: "#fff" }}>{req.patientName}</span>
+                      <span style={{ background: "#ef4444", color: "#fff", padding: "4px 10px", borderRadius: 6, fontSize: "12px", fontWeight: 600 }}>{req.bloodGroup}</span>
+                    </div>
+                    <p style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 6px" }}>{req.hospital}</p>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <span style={{ background: req.urgency === "High" ? "rgba(239,68,68,0.1)" : "rgba(251,146,60,0.1)", color: req.urgency === "High" ? "#ef4444" : "#f97316", padding: "3px 10px", borderRadius: 6, fontSize: "11px", fontWeight: 600 }}>
+                        {req.urgency}
+                      </span>
+                      <span style={{ background: req.status === "Matched" ? "rgba(34,197,94,0.1)" : "rgba(251,191,36,0.1)", color: req.status === "Matched" ? "#22c55e" : "#eab308", padding: "3px 10px", borderRadius: 6, fontSize: "11px", fontWeight: 600 }}>
+                        {req.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 12 }}>
+            <button className="btn-primary" style={{ fontSize: "14px", padding: "12px 28px" }}>Register as Donor</button>
+            <button className="btn-primary" style={{ fontSize: "14px", padding: "12px 28px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff" }}>Request Blood</button>
+          </div>
+        </div>
+      )}
+
+      {activeModule === "pharmacy" && (
+        <div className="fade-up" style={{ textAlign: "left", marginBottom: 40 }}>
+          <button onClick={() => setActiveModule(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#fff", padding: "8px 16px", borderRadius: 10, fontSize: "13px", fontWeight: 600, cursor: "pointer", marginBottom: 24 }}>
+            ← Back to Dashboard
+          </button>
+          
+          <h2 className="serif" style={{ fontSize: "32px", color: "#fff", marginBottom: 24 }}>Medicine Finder</h2>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, marginBottom: 24 }}>
+            {["Nearby Stores", "Check Availability", "Upload Prescription", "Fast Delivery"].map((feature, idx) => (
+              <div key={idx} style={{ background: "rgba(245,158,11,0.02)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 14, padding: "20px", textAlign: "center", cursor: "pointer" }} className="card-hover">
+                <div style={{ fontSize: 28, marginBottom: 12 }}>{"🏪💊📝🚚".split("")[idx]}</div>
+                <h4 style={{ fontSize: "15px", fontWeight: 700, color: "#fff", marginBottom: 8 }}>{feature}</h4>
+                <button className="btn-primary" style={{ fontSize: "12px", padding: "8px 16px", width: "100%" }}>Access</button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
