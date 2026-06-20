@@ -755,7 +755,7 @@ export default function LandingPage() {
             <div style={{ background: "rgba(37,99,235,0.03)", border: "1px solid rgba(37,99,235,0.1)", borderRadius: 12, padding: 20, marginBottom: 24 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
                 <div style={{ textAlign: "left" }}>
-                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px 0" }}>Co-Founder & Lead Engineer</h5>
+                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px 0" }}>Founder & Lead Engineer</h5>
                   <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
                     <strong style={{ color: "#ffffff" }}>Amit Dubey</strong> — AI & Full-Stack Engineer
                     <br />Building technology-driven healthcare solutions to improve patient outcomes across India.
@@ -764,7 +764,7 @@ export default function LandingPage() {
                 <div style={{ textAlign: "left" }}>
                   <h5 style={{ fontSize: 11, fontWeight: 700, color: "#60a5fa", letterSpacing: "0.06em", textTransform: "uppercase", margin: "0 0 8px 0" }}>Our Mission</h5>
                   <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>
-                    Empowering every Indian patient to understand their health data with clarity.
+                    Empowering every Indian patient have right to understand their health data with clarity.
                     <br /><strong style={{ color: "#ffffff" }}>Making healthcare accessible, transparent, and intelligent — for everyone.</strong>
                   </p>
                 </div>

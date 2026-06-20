@@ -23,12 +23,13 @@ export const AuthProvider = ({ children }) => {
     return { success: false, error: "Pipeline migrating..." };
   };
 
-  const registerNode = async (name, email, password) => {
+  // role parameter added — sends to backend
+  const registerNode = async (name, email, password, role = "Patient") => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Signup failed");
@@ -58,39 +59,29 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = async () => {
     try {
-      console.log("🚀 Initializing Real Google Auth Firebase Handshake...");
       const firebaseResult = await signInWithPopup(auth, googleProvider);
       const firebaseUser = firebaseResult.user;
-
       const realGooglePayload = {
         name: firebaseUser.displayName,
         email: firebaseUser.email,
         uid: firebaseUser.uid
       };
-
-      console.log("📥 Real Google Data Received: ", realGooglePayload);
-
       const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(realGooglePayload),
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "FastAPI Google pipeline mapping failed");
-
       localStorage.setItem("sehat_sathi_token", data.token);
       localStorage.setItem("sehat_sathi_user", JSON.stringify(data.user));
       setUser(data.user);
-
       return { success: true };
     } catch (err) {
-      console.error("❌ Google Auth Error Details: ", err);
       return { success: false, error: err.message };
     }
   };
 
-  // ── NEW: Firebase Password Reset Email
   const resetPassword = async (email) => {
     try {
       await sendPasswordResetEmail(auth, email);
