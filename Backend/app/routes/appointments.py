@@ -8,6 +8,22 @@ from datetime import datetime
 
 router = APIRouter(prefix="/appointments", tags=["Appointments"])
 
+# Internal notification helper — avoids circular import
+async def _notify(db, user_id: str, notif_type: str, title: str, message: str, metadata: dict = None):
+    """Create a notification for a user. Fire-and-forget; errors are silenced."""
+    try:
+        await db["notifications"].insert_one({
+            "user_id": user_id,
+            "type": notif_type,
+            "title": title,
+            "message": message,
+            "is_read": False,
+            "metadata": metadata or {},
+            "created_at": datetime.now()
+        })
+    except Exception:
+        pass  # Notifications must never break core appointment flow
+
 ALL_SLOTS = [
     "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
     "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
@@ -45,12 +61,34 @@ async def book_appointment(appointment: AppointmentCreate, current_user: dict = 
         "date": appointment.date,
         "time_slot": appointment.time_slot,
         "status": "Pending",
+        "reason": appointment.reason,
         "created_at": datetime.now()
     }
 
     try:
         result = await db["appointments"].insert_one(new_apt)
-        return {"success": True, "message": "Appointment booked successfully", "appointment_id": str(result.inserted_id)}
+        apt_id = str(result.inserted_id)
+
+        # Fetch names for notification messages
+        patient = await db["users"].find_one({"_id": ObjectId(user_id)})
+        doctor = await db["users"].find_one({"_id": ObjectId(appointment.doctor_id)})
+        patient_name = patient.get("name", "Patient") if patient else "Patient"
+        doctor_name = doctor.get("name", "Doctor") if doctor else "Doctor"
+
+        # Notify patient
+        await _notify(db, user_id, "appointment_booked",
+            "Appointment Booked ✅",
+            f"Your appointment with Dr. {doctor_name} on {appointment.date} at {appointment.time_slot} is confirmed.",
+            {"appointment_id": apt_id, "date": appointment.date, "time_slot": appointment.time_slot}
+        )
+        # Notify doctor
+        await _notify(db, appointment.doctor_id, "appointment_booked",
+            "New Appointment Request 📅",
+            f"{patient_name} has booked an appointment with you on {appointment.date} at {appointment.time_slot}.",
+            {"appointment_id": apt_id, "date": appointment.date, "patient_id": user_id}
+        )
+
+        return {"success": True, "message": "Appointment booked successfully", "appointment_id": apt_id}
     except pymongo.errors.DuplicateKeyError:
         raise HTTPException(status_code=400, detail="This time slot was just taken. Please choose another slot.")
 
@@ -158,6 +196,19 @@ async def cancel_appointment(appointment_id: str, current_user: dict = Depends(v
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
+    # Notify both parties about cancellation
+    canceller = await db["users"].find_one({"_id": ObjectId(user_id)})
+    canceller_name = canceller.get("name", "Someone") if canceller else "Someone"
+    cancel_msg = f"Appointment on {apt.get('date')} at {apt.get('time_slot')} has been cancelled by {canceller_name}."
+
+    # Notify the other party
+    other_id = apt.get("patient_id") if role == "Doctor" else apt.get("doctor_id")
+    if other_id and other_id != user_id:
+        await _notify(db, other_id, "appointment_cancelled",
+            "Appointment Cancelled ❌", cancel_msg,
+            {"appointment_id": appointment_id, "date": apt.get("date")}
+        )
+
     return {"success": True, "message": "Appointment cancelled successfully. The slot is now available."}
 
 
@@ -254,20 +305,29 @@ async def get_doctor_slots(doctor_id: str, date: str):
 
 @router.get("/doctors")
 async def list_doctors():
+    """Public doctor listing — only returns verified/approved doctors."""
     db = get_db()
-    cursor = db["users"].find({"role": "Doctor"})
-    doctors = await cursor.to_list(length=100)
-    for doc in doctors:
-        doc["id"] = str(doc["_id"])
-        doc.pop("_id", None)
-        doc.pop("password", None)
-        doc_details = await db["doctors"].find_one({"user_id": doc["id"]})
-        if doc_details:
-            doc["specialty"] = doc_details.get("specialty", "General")
-            doc["qualifications"] = doc_details.get("qualifications", "")
-            doc["experience_years"] = doc_details.get("experience_years", 0)
-            doc["bio"] = doc_details.get("bio", "")
-            doc["availability"] = doc_details.get("availability", {})
+    # Only show approved doctors — security requirement
+    approved_profiles = await db["doctors"].find({"verification_status": "approved"}).to_list(length=100)
+    doctors = []
+    for doc_details in approved_profiles:
+        user = await db["users"].find_one({"_id": ObjectId(doc_details["user_id"])})
+        if user:
+            user.pop("password", None)
+            doc = {
+                "id": str(user["_id"]),
+                "name": user.get("name"),
+                "email": user.get("email"),
+                "phone": user.get("phone"),
+                "specialty": doc_details.get("specialty", "General"),
+                "qualifications": doc_details.get("qualifications", ""),
+                "experience_years": doc_details.get("experience_years", 0),
+                "bio": doc_details.get("bio", ""),
+                "availability": doc_details.get("availability", {}),
+                "hospital_id": doc_details.get("hospital_id"),
+                "consultation_fee": doc_details.get("consultation_fee")
+            }
+            doctors.append(doc)
     return doctors
 
 
@@ -282,11 +342,30 @@ async def update_appointment_status(appointment_id: str, status: str, current_us
     if status not in allowed_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {', '.join(allowed_statuses)}")
 
+    # Fetch appointment to notify patient
+    try:
+        apt = await db["appointments"].find_one({"_id": ObjectId(appointment_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid appointment ID")
+
     result = await db["appointments"].update_one(
         {"_id": ObjectId(appointment_id)},
-        {"$set": {"status": status}}
+        {"$set": {"status": status, "status_updated_at": datetime.now()}}
     )
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Appointment not found")
+
+    # Notify patient about status change
+    if apt:
+        status_messages = {
+            "Confirmed": ("Appointment Confirmed ✅", f"Your appointment on {apt.get('date')} at {apt.get('time_slot')} has been confirmed."),
+            "Cancelled": ("Appointment Cancelled ❌", f"Your appointment on {apt.get('date')} at {apt.get('time_slot')} has been cancelled."),
+            "Completed": ("Appointment Completed 🎉", f"Your appointment on {apt.get('date')} has been marked as completed. We hope you had a great experience!"),
+        }
+        if status in status_messages:
+            title, msg = status_messages[status]
+            await _notify(db, apt["patient_id"], f"appointment_{status.lower()}", title, msg,
+                {"appointment_id": appointment_id, "date": apt.get("date"), "new_status": status}
+            )
 
     return {"success": True, "message": f"Appointment status updated to {status}"}

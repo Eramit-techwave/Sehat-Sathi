@@ -4,7 +4,8 @@ import { useAuth } from "./context/AuthContext.jsx";
 import LandingPage from "./pages/LandingPage.jsx";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard.jsx";
-import { Activity, LogOut } from "lucide-react";
+import NotificationBell from "./components/NotificationBell.jsx";
+import { Activity, LogOut, ShieldCheck } from "lucide-react";
 
 export default function App() {
   const { user, logout, loading } = useAuth();
@@ -214,10 +215,19 @@ export default function App() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             {user ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                <span style={{ fontSize: "13px", fontWeight: 600, color: "#60a5fa" }}>Hi, {user.name}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                {/* Role badge */}
+                <span style={{
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
+                  background: user.role === "Admin" ? "rgba(168,85,247,0.1)" : user.role === "Doctor" ? "rgba(34,197,94,0.1)" : user.role === "Hospital" ? "rgba(245,158,11,0.1)" : "rgba(96,165,250,0.1)",
+                  color: user.role === "Admin" ? "#a855f7" : user.role === "Doctor" ? "#22c55e" : user.role === "Hospital" ? "#f59e0b" : "#60a5fa",
+                  border: `1px solid ${user.role === "Admin" ? "rgba(168,85,247,0.2)" : user.role === "Doctor" ? "rgba(34,197,94,0.2)" : user.role === "Hospital" ? "rgba(245,158,11,0.2)" : "rgba(96,165,250,0.2)"}`,
+                  borderRadius: 6, padding: "3px 8px"
+                }}>{user.role?.toUpperCase()}</span>
+                <span style={{ fontSize: "13px", fontWeight: 600, color: "#94a3b8" }}>Hi, {user.name?.split(" ")[0]}</span>
+                <NotificationBell />
                 <button className="btn-ghost" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", border: "1px solid rgba(239,68,68,0.2)", color: "#ef4444" }} onClick={logout}>
-                  <LogOut size={13} /> Exit Node
+                  <LogOut size={13} /> Sign Out
                 </button>
               </div>
             ) : (

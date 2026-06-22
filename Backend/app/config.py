@@ -9,8 +9,13 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # GEMINI_API_KEY is an alias for PARSER_API_KEY for backward compatibility
+    @property
+    def GEMINI_API_KEY(self) -> str:
+        return self.PARSER_API_KEY
+
     class Config:
         env_file = ".env"
-        extra = "ignore" # Prevents crash if extra variables are present in env
+        extra = "ignore"  # Prevents crash if extra variables are present in env
 
 settings = Settings()

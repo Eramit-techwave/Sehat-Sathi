@@ -25,22 +25,39 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Email + Password Login (fixed — was hardcoded to error)
+  // Email + Password Login
   const loginWithEmail = async (email, password) => {
     return loginNode(email, password);
   };
 
-  // Register new user with role
-  const registerNode = async (name, email, password, role = "Patient", phone = null) => {
+  // Register new user with role (and optional professional fields)
+  const registerNode = async (
+    name,
+    email,
+    password,
+    role = "Patient",
+    phone = null,
+    medical_reg_number = undefined,
+    registration_number = undefined
+  ) => {
     try {
+      const payload = { name, email, password, role, phone };
+      if (medical_reg_number) payload.medical_reg_number = medical_reg_number;
+      if (registration_number) payload.registration_number = registration_number;
+
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role, phone }),
+        body: JSON.stringify(payload),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Signup failed");
-      return { success: true, message: data.message };
+      return {
+        success: true,
+        message: data.message,
+        verification_required: data.verification_required || false,
+        verification_status: data.verification_status || "approved"
+      };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -58,7 +75,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("sehat_sathi_token", data.token);
       localStorage.setItem("sehat_sathi_user", JSON.stringify(data.user));
       setUser(data.user);
-      return { success: true };
+      return { success: true, verification_status: data.user.verification_status };
     } catch (err) {
       return { success: false, error: err.message };
     }
@@ -104,8 +121,29 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  // Helper: check if current user is verified (for Doctor/Hospital role gate)
+  const isVerified = () => {
+    if (!user) return false;
+    if (user.role === "Patient" || user.role === "Admin") return true;
+    return user.verification_status === "approved";
+  };
+
+  // Get stored JWT token
+  const getToken = () => localStorage.getItem("sehat_sathi_token");
+
   return (
-    <AuthContext.Provider value={{ user, loading, loginNode, loginWithEmail, registerNode, loginWithGoogle, resetPassword, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      loginNode,
+      loginWithEmail,
+      registerNode,
+      loginWithGoogle,
+      resetPassword,
+      logout,
+      isVerified,
+      getToken
+    }}>
       {children}
     </AuthContext.Provider>
   );

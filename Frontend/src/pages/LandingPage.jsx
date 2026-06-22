@@ -98,6 +98,9 @@ export default function LandingPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotStep, setForgotStep] = useState("input");
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [medicalRegNumber, setMedicalRegNumber] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [signupPending, setSignupPending] = useState(false);
 
   useEffect(() => {
     const openLogin = () => { setAuthMode("login"); setAuthOpen(true); };
@@ -113,11 +116,22 @@ export default function LandingPage() {
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     if (authMode === "signup") {
-      const result = await registerNode(name, email, password, selectedRole);
+      const result = await registerNode(
+        name, email, password, selectedRole, null,
+        medicalRegNumber || undefined,
+        registrationNumber || undefined
+      );
       if (result.success) {
-        alert(`Your Account status [${selectedRole}] has been provisioned successfully! Please Sign In.`);
-        setAuthMode("login");
-        setPassword("");
+        if (result.verification_required) {
+          setSignupPending(true);
+          setAuthOpen(false);
+          setEmail(""); setPassword(""); setName("");
+          setMedicalRegNumber(""); setRegistrationNumber("");
+        } else {
+          alert(`✅ Account created as ${selectedRole}! Please Sign In.`);
+          setAuthMode("login");
+          setPassword("");
+        }
       } else {
         alert(`❌ Signup Failed: ${result.error}`);
       }
@@ -589,18 +603,36 @@ export default function LandingPage() {
               {authMode === "signup" && (
                 <>
                   <div>
-                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>FULL OPERATIONAL NAME</label>
+                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>FULL NAME</label>
                     <input className="input-field" type="text" required placeholder="Amit Dubey" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
-                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>SELECT REGISTRATION ROLE NODE</label>
+                    <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>REGISTER AS</label>
+                    {/* ⚠️ SECURITY: Admin option intentionally excluded from public registration */}
                     <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)} style={selectStyle}>
-                      <option value="Patient">Patient Core User</option>
-                      <option value="Doctor">Certified Specialist / Doctor</option>
-                      <option value="Hospital">Hospital Authority Management</option>
-                      <option value="Admin">Central Controller Admin</option>
+                      <option value="Patient">🧑 Patient</option>
+                      <option value="Doctor">👨‍⚕️ Doctor / Specialist</option>
+                      <option value="Hospital">🏥 Hospital</option>
                     </select>
                   </div>
+
+                  {/* Doctor-specific extra fields */}
+                  {selectedRole === "Doctor" && (
+                    <div style={{ background: "rgba(37,99,235,0.05)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: 10, color: "#60a5fa", fontWeight: 700, marginBottom: 8, letterSpacing: "0.04em" }}>DOCTOR DETAILS</div>
+                      <input type="text" placeholder="Medical Registration Number (e.g. MCI-2024-XXXXX)" value={medicalRegNumber} onChange={e => setMedicalRegNumber(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>⚠️ Your account will be reviewed before activation.</p>
+                    </div>
+                  )}
+
+                  {/* Hospital-specific extra fields */}
+                  {selectedRole === "Hospital" && (
+                    <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 8, letterSpacing: "0.04em" }}>HOSPITAL DETAILS</div>
+                      <input type="text" placeholder="Hospital Registration Number" value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
+                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>⚠️ Your hospital will be listed publicly only after admin verification.</p>
+                    </div>
+                  )}
                 </>
               )}
               
@@ -697,6 +729,33 @@ export default function LandingPage() {
                 <button type="button" className="btn-primary" onClick={handleBackToLogin} style={{ width: "100%", fontSize: 13 }}>← Return to Sign In</button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* PENDING VERIFICATION SUCCESS MODAL */}
+      {signupPending && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(2,4,8,0.9)", backdropFilter: "blur(20px)" }}>
+          <div style={{ width: "100%", maxWidth: 420, background: "#0b1329", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 24, padding: "36px", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>🔍</div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, color: "#ffffff", marginBottom: 8 }}>Account Under Review</h3>
+            <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7, marginBottom: 24 }}>
+              Your registration has been submitted successfully! Our admin team will review your credentials and credentials within <strong style={{ color: "#60a5fa" }}>24–48 hours</strong>.
+              <br /><br />
+              Once approved, you'll be able to log in and access your full dashboard.
+            </p>
+            <div style={{ background: "rgba(37,99,235,0.05)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 12, padding: "14px 18px", marginBottom: 24, textAlign: "left" }}>
+              <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, marginBottom: 8 }}>WHAT HAPPENS NEXT</div>
+              {["Admin reviews your registration details", "Your credentials are verified against records", "You receive access notification once approved", "You can then login and set up your profile"].map((step, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ color: "#2563eb", fontWeight: 700, fontSize: 12 }}>{i + 1}.</span>
+                  <span style={{ fontSize: 12, color: "#64748b" }}>{step}</span>
+                </div>
+              ))}
+            </div>
+            <button className="btn-primary" style={{ width: "100%", fontSize: 13 }} onClick={() => { setSignupPending(false); setAuthMode("login"); setAuthOpen(true); }}>
+              Sign In When Ready →
+            </button>
           </div>
         </div>
       )}

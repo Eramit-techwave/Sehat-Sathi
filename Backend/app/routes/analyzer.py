@@ -3,7 +3,7 @@ from google import genai
 from google.genai import types
 from app.config import settings
 from app.database import get_db
-from app.routes.auth import get_current_user
+from app.auth_utils import verify_token
 from pydantic import BaseModel
 from datetime import datetime
 import json
@@ -44,8 +44,9 @@ class ReportInput(BaseModel):
 
 # --- 1. EXISTING TEXT ENDPOINT ---
 @router.post("/text")
-async def analyze_report_text(data: ReportInput, current_user: str = Depends(get_current_user)):
+async def analyze_report_text(data: ReportInput, current_user: dict = Depends(verify_token)):
     try:
+        user_id = current_user.get("sub")
         medical_prompt = f"""
         You are 'Sehat-Sathi AI', a precise medical diagnostic report assistant. 
         Analyze this medical report text and output strictly as a JSON object matching the schema below.
@@ -71,7 +72,7 @@ async def analyze_report_text(data: ReportInput, current_user: str = Depends(get
         db = get_db()
         
         report_document = {
-            "user_id": current_user,
+            "user_id": user_id,
             "raw_text": data.report_text,
             "ai_analysis": clean_json_output,
             "created_at": datetime.utcnow()
@@ -85,11 +86,12 @@ async def analyze_report_text(data: ReportInput, current_user: str = Depends(get
 
 # --- 2. NEW FILE UPLOAD ENDPOINT (PDF & IMAGES) ---
 @router.post("/file")
-async def analyze_report_file(file: UploadFile = File(...), current_user: str = Depends(get_current_user)):
+async def analyze_report_file(file: UploadFile = File(...), current_user: dict = Depends(verify_token)):
     """
     Accepts PDF or Image files, extracts content, passes to Gemini AI with strict guardrails, and saves to MongoDB.
     """
     try:
+        user_id = current_user.get("sub")
         file_bytes = await file.read()
         extracted_text = ""
         is_image = False
@@ -160,7 +162,7 @@ async def analyze_report_file(file: UploadFile = File(...), current_user: str = 
         # Save to Database
         db = get_db()
         report_document = {
-            "user_id": current_user,
+            "user_id": user_id,
             "filename": file.filename,
             "raw_text": extracted_text if not is_image else "Analyzed via Image Vision",
             "ai_analysis": clean_json_output,
@@ -185,10 +187,11 @@ async def analyze_report_file(file: UploadFile = File(...), current_user: str = 
 
 # --- 3. EXISTING HISTORY ENDPOINT ---
 @router.get("/history")
-async def get_user_report_history(current_user: str = Depends(get_current_user)):
+async def get_user_report_history(current_user: dict = Depends(verify_token)):
     try:
+        user_id = current_user.get("sub")
         db = get_db()
-        cursor = db["reports"].find({"user_id": current_user}).sort("created_at", -1)
+        cursor = db["reports"].find({"user_id": user_id}).sort("created_at", -1)
         reports = await cursor.to_list(length=100)
         
         for r in reports:

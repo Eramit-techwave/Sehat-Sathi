@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Security, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
 
@@ -42,3 +42,33 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Security(security))
         return payload
     except jwt.JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+# 5. Role-based access control dependency factory
+# Usage: Depends(require_role("Admin")) or Depends(require_role("Doctor", "Admin"))
+def require_role(*allowed_roles: str):
+    """
+    Factory function that returns a FastAPI dependency enforcing role-based access.
+    Example:
+        @router.get("/admin/users")
+        async def admin_users(current_user: dict = Depends(require_role("Admin"))):
+            ...
+    """
+    def role_checker(credentials: HTTPAuthorizationCredentials = Security(security)):
+        try:
+            payload = jwt.decode(
+                credentials.credentials,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.ALGORITHM]
+            )
+        except jwt.JWTError:
+            raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+        user_role = payload.get("role", "")
+        if user_role not in allowed_roles:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Access denied. Required role(s): {', '.join(allowed_roles)}. Your role: {user_role}"
+            )
+        return payload
+
+    return role_checker
