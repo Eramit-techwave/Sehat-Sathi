@@ -305,15 +305,35 @@ async def get_doctor_slots(doctor_id: str, date: str):
 
 @router.get("/doctors")
 async def list_doctors():
-    """Public doctor listing — only returns verified/approved doctors."""
+    """Public doctor listing — only returns verified/approved doctors with hospital info."""
     db = get_db()
-    # Only show approved doctors — security requirement
     approved_profiles = await db["doctors"].find({"verification_status": "approved"}).to_list(length=100)
     doctors = []
     for doc_details in approved_profiles:
         user = await db["users"].find_one({"_id": ObjectId(doc_details["user_id"])})
         if user:
             user.pop("password", None)
+
+            # Resolve hospital associations with names
+            raw_associations = doc_details.get("hospital_associations", [])
+            resolved_associations = []
+            for assoc in raw_associations:
+                hosp_id = assoc.get("hospital_id")
+                if hosp_id:
+                    hosp_name = assoc.get("hospital_name", "")
+                    try:
+                        hosp_user = await db["users"].find_one({"_id": ObjectId(hosp_id)})
+                        if hosp_user:
+                            hosp_name = hosp_user.get("name", hosp_name)
+                    except Exception:
+                        pass
+                    resolved_associations.append({
+                        "hospital_id": hosp_id,
+                        "hospital_name": hosp_name,
+                        "role": assoc.get("role", "Consultant"),
+                        "is_primary": assoc.get("is_primary", False)
+                    })
+
             doc = {
                 "id": str(user["_id"]),
                 "name": user.get("name"),
@@ -325,6 +345,8 @@ async def list_doctors():
                 "bio": doc_details.get("bio", ""),
                 "availability": doc_details.get("availability", {}),
                 "hospital_id": doc_details.get("hospital_id"),
+                "hospital_associations": resolved_associations,
+                "practice_type": doc_details.get("practice_type", "independent"),
                 "consultation_fee": doc_details.get("consultation_fee")
             }
             doctors.append(doc)

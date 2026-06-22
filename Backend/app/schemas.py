@@ -96,13 +96,28 @@ class ProfileUpdate(BaseModel):
 # DOCTOR SCHEMAS
 # ─────────────────────────────────────────────────────────────
 
+# 🏥 Doctor-Hospital Association (for multi-hospital support)
+class DoctorHospitalAssociation(BaseModel):
+    hospital_id: str = Field(..., description="Hospital user_id")
+    hospital_name: Optional[str] = Field(None, description="Human-readable name (cached)")
+    role: Optional[str] = Field(None, description="e.g. Visiting Consultant, Resident")
+    is_primary: bool = Field(default=False, description="Primary workplace")
+
 # 👨‍⚕️ DOCTOR PROFILE
 class DoctorProfile(BaseModel):
     specialty: Optional[str] = None
     qualifications: Optional[str] = None
     experience_years: Optional[int] = None
     bio: Optional[str] = None
+    # Legacy single hospital_id (kept for backward compat)
     hospital_id: Optional[str] = None
+    # NEW: Multi-hospital associations
+    hospital_associations: Optional[List[DoctorHospitalAssociation]] = None
+    # NEW: Practice type
+    practice_type: Optional[str] = Field(
+        None,
+        description="'independent', 'hospital_based', or 'multi_hospital'"
+    )
     medical_reg_number: Optional[str] = None
     license_details: Optional[str] = None
     consultation_fee: Optional[int] = None

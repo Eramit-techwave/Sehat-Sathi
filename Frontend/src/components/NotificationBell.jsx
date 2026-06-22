@@ -16,13 +16,13 @@ import { Bell, CheckCheck, X, Clock } from "lucide-react";
 const API = "http://localhost:8000";
 
 const TYPE_CONFIG = {
-  appointment_booked:     { icon: "📅", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
-  appointment_confirmed:  { icon: "✅", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-  appointment_cancelled:  { icon: "❌", color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
-  appointment_completed:  { icon: "🎉", color: "#a78bfa", bg: "rgba(167,139,250,0.1)" },
-  verification_approved:  { icon: "🛡️", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
-  verification_rejected:  { icon: "⚠️", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
-  report_analyzed:        { icon: "🔬", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
+  appointment_booked: { icon: "📅", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
+  appointment_confirmed: { icon: "✅", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
+  appointment_cancelled: { icon: "❌", color: "#ef4444", bg: "rgba(239,68,68,0.1)" },
+  appointment_completed: { icon: "🎉", color: "#a78bfa", bg: "rgba(167,139,250,0.1)" },
+  verification_approved: { icon: "🛡️", color: "#22c55e", bg: "rgba(34,197,94,0.1)" },
+  verification_rejected: { icon: "⚠️", color: "#f59e0b", bg: "rgba(245,158,11,0.1)" },
+  report_analyzed: { icon: "🔬", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
 };
 
 function getTypeConfig(type) {

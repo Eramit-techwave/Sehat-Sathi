@@ -872,13 +872,33 @@ export default function PatientDashboard() {
                     style={{ background: "#030712", border: selectedDoctor?.id === doc.id ? "2px solid #2563eb" : "1px solid rgba(255,255,255,0.04)", borderRadius: 16, padding: "20px", cursor: "pointer", transition: "all 0.3s" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
                       <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(37,99,235,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>👨‍⚕️</div>
-                      <div>
+                      <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{doc.name}</div>
                         <div style={{ fontSize: 12, color: "#60a5fa" }}>{doc.specialty || "General"}</div>
                       </div>
+                      {doc.consultation_fee && (
+                        <div style={{ background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", color: "#22c55e", fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                          ₹{doc.consultation_fee}
+                        </div>
+                      )}
                     </div>
-                    {doc.qualifications && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 6 }}>{doc.qualifications}</div>}
-                    {doc.experience_years > 0 && <div style={{ fontSize: 12, color: "#475569", marginBottom: 10 }}>{doc.experience_years} years experience</div>}
+                    {doc.qualifications && <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 4 }}>{doc.qualifications}</div>}
+                    {doc.experience_years > 0 && <div style={{ fontSize: 12, color: "#475569", marginBottom: 8 }}>{doc.experience_years} yrs experience</div>}
+                    {doc.hospital_associations?.length > 0 ? (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                        {doc.hospital_associations.slice(0, 2).map((assoc, i) => (
+                          <span key={i} style={{ fontSize: 10, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.15)", color: "#60a5fa", padding: "2px 8px", borderRadius: 4, display: "flex", alignItems: "center", gap: 3 }}>
+                            🏥 {assoc.hospital_name}
+                            {assoc.is_primary && <span style={{ color: "#22c55e", fontWeight: 800 }}> ★</span>}
+                          </span>
+                        ))}
+                        {doc.hospital_associations.length > 2 && (
+                          <span style={{ fontSize: 10, color: "#64748b" }}>+{doc.hospital_associations.length - 2} more</span>
+                        )}
+                      </div>
+                    ) : doc.practice_type === "independent" ? (
+                      <div style={{ fontSize: 10, color: "#a855f7", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.15)", padding: "2px 8px", borderRadius: 4, marginBottom: 10, display: "inline-block" }}>🏠 Independent Practice</div>
+                    ) : null}
                     <button style={{ width: "100%", fontSize: 13, padding: "10px", background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, fontWeight: 600, cursor: "pointer" }}>Book Consultation</button>
                   </div>
                 ))}

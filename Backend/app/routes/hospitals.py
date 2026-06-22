@@ -312,7 +312,7 @@ async def get_hospital_stats(current_user: dict = Depends(verify_token)):
 
 @router.get("/me/doctors")
 async def get_hospital_doctors(current_user: dict = Depends(verify_token)):
-    """List all doctors affiliated with this hospital."""
+    """List all doctors affiliated with this hospital (via hospital_id or hospital_associations)."""
     db = get_db()
     user_id = current_user.get("sub")
     role = current_user.get("role")
@@ -320,18 +320,42 @@ async def get_hospital_doctors(current_user: dict = Depends(verify_token)):
     if role not in ["Hospital", "Admin"]:
         raise HTTPException(status_code=403, detail="Access restricted to Hospital or Admin role")
 
-    affiliated = await db["doctors"].find({"hospital_id": user_id}).to_list(length=100)
+    # Find doctors affiliated via legacy hospital_id OR new hospital_associations
+    affiliated = await db["doctors"].find({
+        "$or": [
+            {"hospital_id": user_id},
+            {"hospital_associations.hospital_id": user_id}
+        ]
+    }).to_list(length=100)
+
+    seen_ids = set()
     result = []
     for doc in affiliated:
-        doc_user = await db["users"].find_one({"_id": ObjectId(doc["user_id"])})
+        doc_id = doc["user_id"]
+        if doc_id in seen_ids:
+            continue
+        seen_ids.add(doc_id)
+
+        doc_user = await db["users"].find_one({"_id": ObjectId(doc_id)})
         if doc_user:
+            # Find the role in this specific hospital's association
+            assoc_role = "Consultant"
+            for assoc in doc.get("hospital_associations", []):
+                if assoc.get("hospital_id") == user_id:
+                    assoc_role = assoc.get("role", "Consultant")
+                    break
+
             result.append({
-                "id": doc["user_id"],
+                "id": doc_id,
                 "name": doc_user.get("name"),
                 "email": doc_user.get("email"),
                 "specialty": doc.get("specialty", "General"),
                 "qualifications": doc.get("qualifications", ""),
                 "experience_years": doc.get("experience_years", 0),
-                "verification_status": doc.get("verification_status", "pending")
+                "verification_status": doc.get("verification_status", "pending"),
+                "practice_type": doc.get("practice_type", "independent"),
+                "consultation_fee": doc.get("consultation_fee"),
+                "association_role": assoc_role
             })
     return result
+
