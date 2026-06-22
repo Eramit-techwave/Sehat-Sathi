@@ -21,7 +21,22 @@ async def connect_to_mongo():
         db = client[settings.DATABASE_NAME]
         users_collection = db["users"]
         reports_collection = db["reports"]
-        
+
+        # New Collections
+        db["doctors"]
+        db["hospitals"]
+        db["appointments"]
+
+        # Unique compound index to prevent double-booking (Doctor + Date + Time)
+        await db["appointments"].create_index(
+            [("doctor_id", 1), ("date", 1), ("time_slot", 1)],
+            unique=True,
+            partialFilterExpression={"status": {"$ne": "Cancelled"}}
+        )
+
+        # Index for fast user lookups
+        await db["users"].create_index([("email", 1)], unique=True)
+
         # Connection verification ping
         await client.admin.command('ping')
         print("✅ Successfully connected to MongoDB Atlas Cloud Database!")

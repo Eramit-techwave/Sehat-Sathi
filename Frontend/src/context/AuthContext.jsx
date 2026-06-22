@@ -14,22 +14,29 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("sehat_sathi_user");
     const storedToken = localStorage.getItem("sehat_sathi_token");
     if (storedUser && storedToken) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (e) {
+        console.error("Failed to parse stored user", e);
+        localStorage.removeItem("sehat_sathi_user");
+        localStorage.removeItem("sehat_sathi_token");
+      }
     }
     setLoading(false);
   }, []);
 
+  // Email + Password Login (fixed — was hardcoded to error)
   const loginWithEmail = async (email, password) => {
-    return { success: false, error: "Pipeline migrating..." };
+    return loginNode(email, password);
   };
 
-  // role parameter added — sends to backend
-  const registerNode = async (name, email, password, role = "Patient") => {
+  // Register new user with role
+  const registerNode = async (name, email, password, role = "Patient", phone = null) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, role }),
+        body: JSON.stringify({ name, email, password, role, phone }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.detail || "Signup failed");
@@ -98,7 +105,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginNode, registerNode, loginWithEmail, loginWithGoogle, resetPassword, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginNode, loginWithEmail, registerNode, loginWithGoogle, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   );
