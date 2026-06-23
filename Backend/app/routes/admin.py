@@ -7,6 +7,7 @@ Covers: Doctor/Hospital verification, user management, platform analytics.
 from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
 from datetime import datetime, timedelta
+from collections import Counter
 from app.database import get_db
 from app.auth_utils import require_role
 from app.schemas import AdminApprovalAction
@@ -376,3 +377,208 @@ async def reinstate_user(user_id: str, current_user: dict = AdminOnly):
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"success": True, "message": "User account reinstated"}
+
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: str, current_user: dict = AdminOnly):
+    """
+    Permanently delete a user account and all associated data.
+    Cascades: removes user, their role profile (doctor/hospital),
+    all their appointments, reports, and notifications.
+    """
+    db = get_db()
+    admin_id = current_user.get("sub")
+
+    # Prevent admin from deleting themselves
+    if user_id == admin_id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own admin account.")
+
+    try:
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if user.get("role") == "Admin":
+        raise HTTPException(status_code=403, detail="Admin accounts cannot be deleted via this panel.")
+
+    role = user.get("role")
+
+    # Cascade delete role-specific profiles
+    if role == "Doctor":
+        await db["doctors"].delete_one({"user_id": user_id})
+    elif role == "Hospital":
+        await db["hospitals"].delete_one({"user_id": user_id})
+
+    # Cascade delete appointments (as patient or doctor or hospital)
+    await db["appointments"].delete_many({
+        "$or": [
+            {"patient_id": user_id},
+            {"doctor_id": user_id},
+            {"hospital_id": user_id}
+        ]
+    })
+
+    # Cascade delete reports
+    await db["reports"].delete_many({"user_id": user_id})
+
+    # Cascade delete notifications
+    await db["notifications"].delete_many({"user_id": user_id})
+
+    # Finally, delete the user record itself
+    await db["users"].delete_one({"_id": ObjectId(user_id)})
+
+    return {
+        "success": True,
+        "message": f"{role} account permanently deleted.",
+        "deleted_user_id": user_id
+    }
+
+
+# ─────────────────────────────────────────────────────────────
+# BOOKING ANALYTICS
+# ─────────────────────────────────────────────────────────────
+
+@router.get("/booking-analytics")
+async def get_booking_analytics(current_user: dict = AdminOnly):
+    """
+    Enhanced booking analytics for the Admin dashboard.
+    Returns peak hours, most-booked slots, top doctors/hospitals,
+    and daily/weekly/monthly booking trends.
+    """
+    db = get_db()
+
+    all_appointments = await db["appointments"].find({}).to_list(length=10000)
+
+    # ── Peak Hours ──────────────────────────────────────────
+    hour_counts = Counter()
+    slot_counts = Counter()
+    doctor_counts = Counter()
+    hospital_counts = Counter()
+
+    for apt in all_appointments:
+        time_slot = apt.get("time_slot", "")
+        if time_slot:
+            slot_counts[time_slot] += 1
+            # Extract hour for peak hour analysis
+            try:
+                t = datetime.strptime(time_slot.strip(), "%I:%M %p")
+                hour_counts[t.hour] += 1
+            except Exception:
+                pass
+        doctor_id = apt.get("doctor_id")
+        if doctor_id:
+            doctor_counts[doctor_id] += 1
+        hospital_id = apt.get("hospital_id")
+        if hospital_id:
+            hospital_counts[hospital_id] += 1
+
+    # Format peak hours as 12-hour display
+    def fmt_hour(h):
+        suffix = "AM" if h < 12 else "PM"
+        display = h if h <= 12 else h - 12
+        if display == 0:
+            display = 12
+        next_h = h + 1
+        next_suffix = "AM" if next_h < 12 else "PM"
+        next_display = next_h if next_h <= 12 else next_h - 12
+        if next_display == 0:
+            next_display = 12
+        return f"{display}:00 {suffix} – {next_display}:00 {next_suffix}"
+
+    peak_hours = [
+        {"hour": fmt_hour(h), "count": c}
+        for h, c in sorted(hour_counts.items(), key=lambda x: -x[1])
+    ][:6]
+
+    most_booked_slots = [
+        {"slot": slot, "count": cnt}
+        for slot, cnt in slot_counts.most_common(5)
+    ]
+
+    # ── Most Active Doctors ─────────────────────────────────
+    most_active_doctors = []
+    for doc_id, count in doctor_counts.most_common(5):
+        try:
+            user = await db["users"].find_one({"_id": ObjectId(doc_id)})
+            if user:
+                doc_profile = await db["doctors"].find_one({"user_id": doc_id})
+                most_active_doctors.append({
+                    "id": doc_id,
+                    "name": user.get("name", "Unknown"),
+                    "specialty": doc_profile.get("specialty", "General") if doc_profile else "General",
+                    "appointments": count
+                })
+        except Exception:
+            pass
+
+    # ── Most Active Hospitals ───────────────────────────────
+    most_active_hospitals = []
+    for hosp_id, count in hospital_counts.most_common(5):
+        try:
+            user = await db["users"].find_one({"_id": ObjectId(hosp_id)})
+            if user:
+                most_active_hospitals.append({
+                    "id": hosp_id,
+                    "name": user.get("name", "Unknown"),
+                    "appointments": count
+                })
+        except Exception:
+            pass
+
+    # ── Daily Bookings (last 30 days) ───────────────────────
+    daily_bookings = []
+    for i in range(29, -1, -1):
+        day = (datetime.now() - timedelta(days=i)).strftime("%Y-%m-%d")
+        count = sum(1 for a in all_appointments if a.get("date") == day)
+        daily_bookings.append({"date": day, "count": count})
+
+    # ── Weekly Bookings (last 12 weeks) ────────────────────
+    weekly_bookings = []
+    today = datetime.now()
+    for i in range(11, -1, -1):
+        week_start = today - timedelta(weeks=i + 1)
+        week_end = today - timedelta(weeks=i)
+        count = sum(
+            1 for a in all_appointments
+            if a.get("date") and week_start.strftime("%Y-%m-%d") <= a["date"] < week_end.strftime("%Y-%m-%d")
+        )
+        weekly_bookings.append({
+            "week": week_start.strftime("%b %d"),
+            "count": count
+        })
+
+    # ── Monthly Bookings (last 12 months) ──────────────────
+    monthly_bookings = []
+    for i in range(11, -1, -1):
+        month_date = today.replace(day=1) - timedelta(days=i * 30)
+        month_str = month_date.strftime("%Y-%m")
+        count = sum(
+            1 for a in all_appointments
+            if a.get("date", "").startswith(month_str)
+        )
+        monthly_bookings.append({
+            "month": month_date.strftime("%b %Y"),
+            "count": count
+        })
+
+    # ── Summary ────────────────────────────────────────────
+    peak_hour_label = peak_hours[0]["hour"] if peak_hours else "N/A"
+    most_booked_slot_label = most_booked_slots[0]["slot"] if most_booked_slots else "N/A"
+
+    return {
+        "summary": {
+            "peak_hour": peak_hour_label,
+            "most_booked_slot": most_booked_slot_label,
+            "total_analyzed": len(all_appointments)
+        },
+        "peak_hours": peak_hours,
+        "most_booked_slots": most_booked_slots,
+        "most_active_doctors": most_active_doctors,
+        "most_active_hospitals": most_active_hospitals,
+        "daily_bookings": daily_bookings,
+        "weekly_bookings": weekly_bookings,
+        "monthly_bookings": monthly_bookings
+    }

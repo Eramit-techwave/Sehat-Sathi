@@ -588,18 +588,18 @@ export default function LandingPage() {
       {/* AUTH MODAL WITH ROLE SELECTOR */}
       {authOpen && (
         <div className="modal-backdrop" style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, background: "rgba(2,4,8,0.8)", backdropFilter: "blur(16px)" }} onClick={() => setAuthOpen(false)}>
-          <div className="modal-card" style={{ width: "100%", maxWidth: 390, background: "#0b1329", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "32px 36px 36px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
+          <div className="modal-card" style={{ width: "100%", maxWidth: 420, background: "#0b1329", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 24, padding: "24px 32px 28px", position: "relative", boxShadow: "0 20px 50px rgba(0,0,0,0.5)" }} onClick={e => e.stopPropagation()}>
             <button style={{ position: "absolute", top: 16, right: 16, background: "transparent", border: "none", color: "#475569", cursor: "pointer", fontSize: 16 }} onClick={() => setAuthOpen(false)}>✕</button>
 
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 6px 16px rgba(37,99,235,0.2)" }}>
-                <Activity size={20} style={{ color: "white" }} />
+            <div style={{ textAlign: "center", marginBottom: 14 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg, #2563eb, #1d4ed8)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px", boxShadow: "0 6px 16px rgba(37,99,235,0.2)" }}>
+                <Activity size={18} style={{ color: "white" }} />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 800, color: "#ffffff", marginBottom: 4 }}>{authMode === "login" ? "Verify Credentials" : "Provision Profile"}</h3>
-              <p style={{ fontSize: 12, color: "#64748b" }}>{authMode === "login" ? "Access secure monitoring layers" : "Configure localized user access paths"}</p>
+              <h3 style={{ fontSize: 18, fontWeight: 800, color: "#ffffff", marginBottom: 3 }}>{authMode === "login" ? "Verify Credentials" : "Provision Profile"}</h3>
+              <p style={{ fontSize: 11, color: "#64748b" }}>{authMode === "login" ? "Access secure monitoring layers" : "Configure localized user access paths"}</p>
             </div>
 
-            <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <form onSubmit={handleEmailAuth} style={{ display: "flex", flexDirection: "column", gap: 11 }}>
               {authMode === "signup" && (
                 <>
                   <div>
@@ -628,9 +628,15 @@ export default function LandingPage() {
                   {/* Hospital-specific extra fields */}
                   {selectedRole === "Hospital" && (
                     <div style={{ background: "rgba(245,158,11,0.05)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 10, padding: "12px 14px" }}>
-                      <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 8, letterSpacing: "0.04em" }}>HOSPITAL DETAILS</div>
-                      <input type="text" placeholder="Hospital Registration Number" value={registrationNumber} onChange={e => setRegistrationNumber(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, padding: "10px 12px", color: "#fff", fontSize: 12, outline: "none", boxSizing: "border-box" }} />
-                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 6 }}>⚠️ Your hospital will be listed publicly only after admin verification.</p>
+                      <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, marginBottom: 6, letterSpacing: "0.04em" }}>HOSPITAL DETAILS</div>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "rgba(245,158,11,0.04)", borderRadius: 8, padding: "10px 12px" }}>
+                        <span style={{ fontSize: 14, flexShrink: 0 }}>🏥</span>
+                        <div>
+                          <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600, marginBottom: 2 }}>Unique Hospital ID will be auto-assigned</div>
+                          <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5 }}>A unique platform ID (e.g. <code style={{ color: "#fbbf24" }}>HSP548921</code>) will be generated automatically upon registration. No manual entry needed.</div>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>⚠️ Your hospital will be listed publicly only after admin verification.</p>
                     </div>
                   )}
                 </>

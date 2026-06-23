@@ -154,6 +154,7 @@ async def get_my_hospital_profile(current_user: dict = Depends(verify_token)):
         "departments": hosp.get("departments", []),
         "facilities": hosp.get("facilities", []),
         "registration_number": hosp.get("registration_number", ""),
+        "hospital_platform_id": hosp.get("hospital_platform_id", ""),
         "verification_status": hosp.get("verification_status", "pending"),
         "rejection_reason": hosp.get("rejection_reason"),
         "bed_counts": hosp.get("bed_counts", {"general": 0, "icu": 0, "emergency": 0}),

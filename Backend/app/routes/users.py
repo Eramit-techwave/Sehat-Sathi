@@ -1,11 +1,20 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
 from bson import ObjectId
 from app.database import get_db
 from app.auth_utils import verify_token
 from pydantic import BaseModel
 from typing import Optional, List
+import os
+import uuid
 
 router = APIRouter(prefix="/users", tags=["Users"])
+
+# Directory to store profile photos (reuses existing stored_reports parent)
+PROFILE_PHOTOS_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+    "stored_reports", "profile_photos"
+)
+os.makedirs(PROFILE_PHOTOS_DIR, exist_ok=True)
 
 
 class ProfileUpdate(BaseModel):
@@ -58,6 +67,61 @@ async def update_profile(profile_data: ProfileUpdate, current_user: dict = Depen
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"success": True, "message": "Profile updated successfully"}
+
+
+@router.post("/upload-photo")
+async def upload_profile_photo(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(verify_token)
+):
+    """Upload or update profile photo for any user type (Patient, Doctor, Hospital)."""
+    db = get_db()
+    user_id = current_user.get("sub")
+
+    # Validate file type
+    allowed_types = {"image/jpeg", "image/jpg", "image/png", "image/webp"}
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail="Only JPEG, PNG, or WebP images are allowed."
+        )
+
+    # Read file and check size (max 5MB)
+    contents = await file.read()
+    if len(contents) > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=400,
+            detail="File size exceeds the 5MB limit."
+        )
+
+    # Determine extension from content_type
+    ext_map = {
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/png": ".png",
+        "image/webp": ".webp"
+    }
+    ext = ext_map.get(file.content_type, ".jpg")
+
+    # Save file: named by user_id for easy lookup/replacement
+    filename = f"{user_id}{ext}"
+    file_path = os.path.join(PROFILE_PHOTOS_DIR, filename)
+
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    # Store the URL reference in the user document
+    photo_url = f"/static/photos/{filename}"
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"profile_photo_url": photo_url}}
+    )
+
+    return {
+        "success": True,
+        "message": "Profile photo uploaded successfully.",
+        "profile_photo_url": photo_url
+    }
 
 
 @router.get("/all")

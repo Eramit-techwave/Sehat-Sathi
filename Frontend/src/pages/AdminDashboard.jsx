@@ -3,7 +3,8 @@ import { useState, useEffect, useCallback } from "react";
 import {
   LogOut, Activity, Users, Stethoscope, Hospital, Calendar,
   CheckCircle2, XCircle, Clock, BarChart3, RefreshCw,
-  Search, ChevronDown, ShieldCheck, AlertTriangle, TrendingUp
+  Search, ChevronDown, ShieldCheck, AlertTriangle, TrendingUp,
+  Trash2, Zap, Award, Building2
 } from "lucide-react";
 
 const API = "http://localhost:8000";
@@ -24,7 +25,13 @@ function useAdminAPI() {
     return res.json();
   }, [token]);
 
-  return { get, put };
+  const del = useCallback(async (path) => {
+    const res = await fetch(`${API}${path}`, { method: "DELETE", headers });
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return res.json();
+  }, [token]);
+
+  return { get, put, del };
 }
 
 // ─── STAT CARD ─────────────────────────────────────────────
@@ -42,7 +49,7 @@ function StatCard({ icon, label, value, sub, color, gradient }) {
       <div>
         <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", lineHeight: 1 }}>{value}</div>
         <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{label}</div>
-        {sub && <div style={{ fontSize: 10, color: color, fontWeight: 700, marginTop: 3 }}>{sub}</div>}
+        {sub && <div style={{ fontSize: 10, color, fontWeight: 700, marginTop: 3 }}>{sub}</div>}
       </div>
     </div>
   );
@@ -119,16 +126,149 @@ function VerifyCard({ item, type, onAction }) {
 }
 
 // ─── MINI BAR CHART ────────────────────────────────────────
-function MiniBarChart({ data }) {
+function MiniBarChart({ data, labelKey = "date", color = "#3b82f6" }) {
   const max = Math.max(...data.map(d => d.count), 1);
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60 }}>
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>
       {data.map((d, i) => (
         <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-          <div style={{ width: "100%", background: i === data.length - 1 ? "#3b82f6" : "rgba(37,99,235,0.3)", borderRadius: "4px 4px 0 0", height: `${Math.max((d.count / max) * 48, 3)}px`, transition: "height 0.4s ease" }} />
-          <div style={{ fontSize: 8, color: "#475569", whiteSpace: "nowrap" }}>{d.date.slice(5)}</div>
+          <div style={{
+            width: "100%",
+            background: i === data.length - 1 ? color : `${color}55`,
+            borderRadius: "3px 3px 0 0",
+            height: `${Math.max((d.count / max) * 50, d.count > 0 ? 3 : 0)}px`,
+            transition: "height 0.4s ease"
+          }} />
+          <div style={{ fontSize: 7, color: "#475569", whiteSpace: "nowrap", overflow: "hidden", maxWidth: "100%", textAlign: "center" }}>
+            {d[labelKey] ? d[labelKey].slice(-5) : ""}
+          </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─── DELETE CONFIRMATION MODAL ──────────────────────────────
+function DeleteConfirmModal({ user, onConfirm, onCancel }) {
+  const [confirmText, setConfirmText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const isReady = confirmText === "DELETE";
+
+  const handleConfirm = async () => {
+    if (!isReady) return;
+    setLoading(true);
+    await onConfirm(user.id);
+    setLoading(false);
+  };
+
+  const roleColors = {
+    Patient: "#60a5fa", Doctor: "#22c55e", Hospital: "#f59e0b"
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, zIndex: 500,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      background: "rgba(2,4,8,0.85)", backdropFilter: "blur(16px)"
+    }} onClick={onCancel}>
+      <div style={{
+        width: "100%", maxWidth: 420,
+        background: "#0b1329",
+        border: "1px solid rgba(239,68,68,0.3)",
+        borderRadius: 20, padding: "32px 32px 28px",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+        animation: "fadeUp 0.2s ease"
+      }} onClick={e => e.stopPropagation()}>
+        {/* Icon */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Trash2 size={24} style={{ color: "#ef4444" }} />
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 8 }}>
+          Permanently Delete Account
+        </h3>
+        <p style={{ fontSize: 12, color: "#64748b", textAlign: "center", lineHeight: 1.6, marginBottom: 20 }}>
+          This action <strong style={{ color: "#ef4444" }}>cannot be undone</strong>. All data including
+          appointments, reports, and notifications will be permanently erased.
+        </p>
+
+        {/* User info */}
+        <div style={{ background: "rgba(239,68,68,0.05)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{user.name}</div>
+          <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>{user.email}</div>
+          <span style={{
+            fontSize: 10, fontWeight: 700, borderRadius: 6, padding: "3px 8px",
+            background: `${roleColors[user.role] || "#64748b"}15`,
+            color: roleColors[user.role] || "#64748b",
+            border: `1px solid ${roleColors[user.role] || "#64748b"}30`
+          }}>{user.role}</span>
+        </div>
+
+        {/* Type DELETE */}
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ fontSize: 10, color: "#ef4444", fontWeight: 700, display: "block", marginBottom: 8, letterSpacing: "0.04em" }}>
+            TYPE "DELETE" TO CONFIRM
+          </label>
+          <input
+            type="text"
+            placeholder="DELETE"
+            value={confirmText}
+            onChange={e => setConfirmText(e.target.value)}
+            style={{
+              width: "100%", background: "rgba(239,68,68,0.05)",
+              border: `1px solid ${isReady ? "rgba(239,68,68,0.5)" : "rgba(239,68,68,0.2)"}`,
+              borderRadius: 10, padding: "11px 14px", color: "#fff",
+              fontSize: 13, outline: "none", boxSizing: "border-box",
+              fontFamily: "monospace", letterSpacing: "0.08em",
+              transition: "border-color 0.2s"
+            }}
+          />
+        </div>
+
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            onClick={onCancel}
+            style={{ flex: 1, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", color: "#64748b", padding: "11px", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleConfirm}
+            disabled={!isReady || loading}
+            style={{
+              flex: 1,
+              background: isReady ? "rgba(239,68,68,0.15)" : "rgba(239,68,68,0.04)",
+              border: `1px solid ${isReady ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.1)"}`,
+              color: isReady ? "#ef4444" : "#4b2020",
+              padding: "11px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+              cursor: isReady ? "pointer" : "not-allowed",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              transition: "all 0.2s"
+            }}
+          >
+            <Trash2 size={13} />
+            {loading ? "Deleting..." : "Delete Permanently"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── HORIZONTAL BAR ────────────────────────────────────────
+function HBar({ label, value, max, color, suffix = "" }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontSize: 12, color: "#94a3b8", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 8 }}>{label}</span>
+        <span style={{ fontSize: 12, color, fontWeight: 700, flexShrink: 0 }}>{value}{suffix}</span>
+      </div>
+      <div style={{ height: 5, borderRadius: 3, background: "rgba(255,255,255,0.05)" }}>
+        <div style={{ height: "100%", borderRadius: 3, background: color, width: `${pct}%`, transition: "width 0.8s ease" }} />
+      </div>
     </div>
   );
 }
@@ -136,9 +276,11 @@ function MiniBarChart({ data }) {
 // ─── MAIN COMPONENT ────────────────────────────────────────
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
-  const { get, put } = useAdminAPI();
+  const { get, put, del } = useAdminAPI();
   const [tab, setTab] = useState("overview");
   const [stats, setStats] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
+  const [analyticsView, setAnalyticsView] = useState("daily");
   const [pendingDocs, setPendingDocs] = useState([]);
   const [pendingHosps, setPendingHosps] = useState([]);
   const [users, setUsers] = useState([]);
@@ -147,6 +289,7 @@ export default function AdminDashboard() {
   const [userRoleFilter, setUserRoleFilter] = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const showToast = (msg, type = "success") => {
     setToast({ msg, type });
@@ -156,14 +299,16 @@ export default function AdminDashboard() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsData, docs, hosps] = await Promise.all([
+      const [statsData, docs, hosps, analyticsData] = await Promise.all([
         get("/admin/stats"),
         get("/admin/doctors/pending"),
-        get("/admin/hospitals/pending")
+        get("/admin/hospitals/pending"),
+        get("/admin/booking-analytics")
       ]);
       setStats(statsData);
       setPendingDocs(docs);
       setPendingHosps(hosps);
+      setAnalytics(analyticsData);
     } catch (e) {
       showToast("Failed to load data. Check your connection.", "error");
     }
@@ -216,6 +361,18 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleDeleteConfirm = async (userId) => {
+    try {
+      await del(`/admin/users/${userId}`);
+      showToast("Account permanently deleted.", "success");
+      setDeleteTarget(null);
+      loadUsers();
+    } catch (e) {
+      showToast("Deletion failed. Try again.", "error");
+      setDeleteTarget(null);
+    }
+  };
+
   const TABS = [
     { id: "overview", label: "Overview", icon: <BarChart3 size={14} /> },
     { id: "doctors", label: `Doctors ${pendingDocs.length > 0 ? `(${pendingDocs.length})` : ""}`, icon: <Stethoscope size={14} /> },
@@ -224,6 +381,17 @@ export default function AdminDashboard() {
   ];
 
   const pendingTotal = pendingDocs.length + pendingHosps.length;
+
+  // Get chart data based on selected view
+  const getChartData = () => {
+    if (!analytics) return [];
+    if (analyticsView === "daily") return analytics.daily_bookings?.slice(-14) || [];
+    if (analyticsView === "weekly") return analytics.weekly_bookings || [];
+    if (analyticsView === "monthly") return analytics.monthly_bookings || [];
+    return [];
+  };
+
+  const chartLabelKey = analyticsView === "daily" ? "date" : analyticsView === "weekly" ? "week" : "month";
 
   return (
     <div style={{ minHeight: "100vh", background: "#030712", color: "#f1f5f9", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -240,6 +408,15 @@ export default function AdminDashboard() {
         }}>
           {toast.type === "success" ? "✅ " : "❌ "}{toast.msg}
         </div>
+      )}
+
+      {/* DELETE MODAL */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          user={deleteTarget}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "32px 4%" }}>
@@ -300,14 +477,141 @@ export default function AdminDashboard() {
               <StatCard icon={<Clock size={22} style={{ color: "#fb923c" }} />} label="Pending Reviews" value={(stats?.verification?.pending_doctors ?? 0) + (stats?.verification?.pending_hospitals ?? 0)} color="#fb923c" />
             </div>
 
-            {/* Appointment Trend */}
+            {/* ── BOOKING ANALYTICS ── */}
+            {analytics && (
+              <div style={{ marginBottom: 24 }}>
+                {/* Summary Cards */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+                  <Zap size={16} style={{ color: "#f59e0b" }} />
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>Booking Analytics</span>
+                  <span style={{ fontSize: 10, color: "#475569", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 6, padding: "2px 8px" }}>
+                    {analytics.summary?.total_analyzed ?? 0} appointments analyzed
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 14, marginBottom: 20 }}>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(245,158,11,0.15)", borderRadius: 14, padding: "18px 20px" }}>
+                    <div style={{ fontSize: 10, color: "#f59e0b", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 8 }}>⚡ PEAK BOOKING TIME</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 2 }}>
+                      {analytics.summary?.peak_hour || "N/A"}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>Highest appointment demand</div>
+                  </div>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(96,165,250,0.15)", borderRadius: 14, padding: "18px 20px" }}>
+                    <div style={{ fontSize: 10, color: "#60a5fa", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 8 }}>🎯 MOST BOOKED SLOT</div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 2 }}>
+                      {analytics.summary?.most_booked_slot || "N/A"}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>Top time slot by bookings</div>
+                  </div>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(34,197,94,0.15)", borderRadius: 14, padding: "18px 20px" }}>
+                    <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 8 }}>📅 TODAY'S BOOKINGS</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 2 }}>
+                      {stats?.appointments?.today ?? 0}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>Appointments scheduled today</div>
+                  </div>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(167,139,250,0.15)", borderRadius: 14, padding: "18px 20px" }}>
+                    <div style={{ fontSize: 10, color: "#a78bfa", fontWeight: 700, letterSpacing: "0.06em", marginBottom: 8 }}>📊 TOTAL BOOKINGS</div>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 2 }}>
+                      {analytics.summary?.total_analyzed ?? 0}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b" }}>All-time appointments</div>
+                  </div>
+                </div>
+
+                {/* Booking Trend Chart */}
+                <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, padding: "22px", marginBottom: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <TrendingUp size={15} style={{ color: "#3b82f6" }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Booking Trends</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {["daily", "weekly", "monthly"].map(v => (
+                        <button key={v} onClick={() => setAnalyticsView(v)} style={{
+                          background: analyticsView === v ? "rgba(37,99,235,0.15)" : "transparent",
+                          border: `1px solid ${analyticsView === v ? "rgba(37,99,235,0.3)" : "rgba(255,255,255,0.06)"}`,
+                          color: analyticsView === v ? "#60a5fa" : "#475569",
+                          padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: "pointer", textTransform: "capitalize"
+                        }}>{v}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <MiniBarChart data={getChartData()} labelKey={chartLabelKey} color="#3b82f6" />
+                </div>
+
+                {/* Peak Hours + Top Slots side by side */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 14, padding: "20px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Clock size={13} style={{ color: "#f59e0b" }} /> Peak Booking Hours
+                    </div>
+                    {(analytics.peak_hours || []).length === 0
+                      ? <div style={{ fontSize: 12, color: "#475569" }}>No data yet</div>
+                      : (analytics.peak_hours || []).map((h, i) => (
+                        <HBar key={i} label={h.hour} value={h.count} max={analytics.peak_hours[0]?.count || 1} color="#f59e0b" suffix=" bookings" />
+                      ))
+                    }
+                  </div>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 14, padding: "20px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Calendar size={13} style={{ color: "#60a5fa" }} /> Most Booked Slots
+                    </div>
+                    {(analytics.most_booked_slots || []).length === 0
+                      ? <div style={{ fontSize: 12, color: "#475569" }}>No data yet</div>
+                      : (analytics.most_booked_slots || []).map((s, i) => (
+                        <HBar key={i} label={s.slot} value={s.count} max={analytics.most_booked_slots[0]?.count || 1} color="#60a5fa" suffix=" bookings" />
+                      ))
+                    }
+                  </div>
+                </div>
+
+                {/* Top Doctors + Top Hospitals side by side */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 14, padding: "20px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Award size={13} style={{ color: "#22c55e" }} /> Most Active Doctors
+                    </div>
+                    {(analytics.most_active_doctors || []).length === 0
+                      ? <div style={{ fontSize: 12, color: "#475569" }}>No data yet</div>
+                      : (analytics.most_active_doctors || []).map((d, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "8px 10px", background: "rgba(34,197,94,0.04)", borderRadius: 8 }}>
+                          <div>
+                            <div style={{ fontSize: 12, color: "#fff", fontWeight: 600 }}>{d.name}</div>
+                            <div style={{ fontSize: 10, color: "#64748b" }}>{d.specialty}</div>
+                          </div>
+                          <div style={{ fontSize: 13, color: "#22c55e", fontWeight: 700 }}>{d.appointments}</div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                  <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 14, padding: "20px" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", marginBottom: 14, display: "flex", alignItems: "center", gap: 6 }}>
+                      <Building2 size={13} style={{ color: "#f59e0b" }} /> Most Active Hospitals
+                    </div>
+                    {(analytics.most_active_hospitals || []).length === 0
+                      ? <div style={{ fontSize: 12, color: "#475569" }}>No data yet</div>
+                      : (analytics.most_active_hospitals || []).map((h, i) => (
+                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "8px 10px", background: "rgba(245,158,11,0.04)", borderRadius: 8 }}>
+                          <div style={{ fontSize: 12, color: "#fff", fontWeight: 600 }}>{h.name}</div>
+                          <div style={{ fontSize: 13, color: "#f59e0b", fontWeight: 700 }}>{h.appointments}</div>
+                        </div>
+                      ))
+                    }
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Appointment Trend (last 7 days - original) */}
             {stats?.appointment_trend_7days && (
               <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, padding: "24px", marginBottom: 24 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
                   <TrendingUp size={16} style={{ color: "#3b82f6" }} />
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>Appointment Trend — Last 7 Days</span>
                 </div>
-                <MiniBarChart data={stats.appointment_trend_7days} />
+                <MiniBarChart data={stats.appointment_trend_7days} labelKey="date" color="#3b82f6" />
               </div>
             )}
 
@@ -413,7 +717,7 @@ export default function AdminDashboard() {
 
             <div style={{ background: "#0b1329", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 16, overflow: "hidden" }}>
               {/* Table header */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 120px 120px", padding: "12px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 100px 180px", padding: "12px 20px", background: "rgba(255,255,255,0.02)", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 12 }}>
                 {["Name", "Email", "Role", "Joined", "Actions"].map((h, i) => (
                   <div key={i} style={{ fontSize: 10, color: "#475569", fontWeight: 700, letterSpacing: "0.04em" }}>{h}</div>
                 ))}
@@ -422,8 +726,18 @@ export default function AdminDashboard() {
                 <div style={{ padding: "40px", textAlign: "center", color: "#475569", fontSize: 13 }}>No users found.</div>
               ) : (
                 users.map((u, i) => (
-                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 120px 120px 120px", padding: "14px 20px", borderBottom: i < users.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none", gap: 12, alignItems: "center" }}>
-                    <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{u.name}</div>
+                  <div key={u.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 110px 100px 180px", padding: "14px 20px", borderBottom: i < users.length - 1 ? "1px solid rgba(255,255,255,0.03)" : "none", gap: 12, alignItems: "center" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      {/* Avatar */}
+                      {u.profile_photo_url ? (
+                        <img src={`http://localhost:8000${u.profile_photo_url}`} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(37,99,235,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#60a5fa", fontWeight: 700, flexShrink: 0 }}>
+                          {(u.name || "?")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <span style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{u.name}</span>
+                    </div>
                     <div style={{ fontSize: 12, color: "#64748b" }}>{u.email}</div>
                     <div>
                       <span style={{
@@ -436,19 +750,34 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                     <div style={{ fontSize: 11, color: "#475569" }}>{u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}</div>
-                    <div>
+                    <div style={{ display: "flex", gap: 6 }}>
                       {u.role !== "Admin" && (
-                        <button
-                          onClick={() => handleUserSuspend(u.id, !u.is_active === false)}
-                          style={{
-                            background: u.is_active === false ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
-                            border: `1px solid ${u.is_active === false ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
-                            color: u.is_active === false ? "#22c55e" : "#ef4444",
-                            padding: "5px 12px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: "pointer"
-                          }}
-                        >
-                          {u.is_active === false ? "Reinstate" : "Suspend"}
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleUserSuspend(u.id, !u.is_active === false)}
+                            style={{
+                              background: u.is_active === false ? "rgba(34,197,94,0.08)" : "rgba(239,68,68,0.08)",
+                              border: `1px solid ${u.is_active === false ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)"}`,
+                              color: u.is_active === false ? "#22c55e" : "#ef4444",
+                              padding: "5px 10px", borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: "pointer"
+                            }}
+                          >
+                            {u.is_active === false ? "Reinstate" : "Suspend"}
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(u)}
+                            style={{
+                              background: "rgba(239,68,68,0.06)",
+                              border: "1px solid rgba(239,68,68,0.15)",
+                              color: "#ef4444",
+                              padding: "5px 8px", borderRadius: 7, fontSize: 11, cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 4
+                            }}
+                            title="Delete Account"
+                          >
+                            <Trash2 size={11} /> Delete
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

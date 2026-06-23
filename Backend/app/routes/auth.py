@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import timedelta
 from bson import ObjectId
 from jose import jwt, JWTError
+import random
+import string
 
 # Internal Architecture Imports
 from app.schemas import UserCreate, UserLogin, UserResponse, PasswordResetConfirm
@@ -92,6 +94,17 @@ async def signup(user_data: UserCreate):
         }
 
     elif role == "Hospital":
+        # Auto-generate a unique 6-digit Hospital Platform ID (e.g. HSP548921)
+        async def generate_unique_hospital_id():
+            while True:
+                digits = "".join(random.choices(string.digits, k=6))
+                candidate = f"HSP{digits}"
+                existing = await db["hospitals"].find_one({"hospital_platform_id": candidate})
+                if not existing:
+                    return candidate
+
+        hospital_platform_id = await generate_unique_hospital_id()
+
         await db["hospitals"].insert_one({
             "user_id": user_id,
             "name": user_data.name,
@@ -101,6 +114,7 @@ async def signup(user_data: UserCreate):
             "phone": user_data.phone or "",
             "website": "",
             "registration_number": user_data.registration_number or "",
+            "hospital_platform_id": hospital_platform_id,
             "bed_counts": {"general": 0, "icu": 0, "emergency": 0},
             "bed_availability": {"general": True, "icu": True, "emergency": True},
             # ✅ VERIFICATION FIELDS — Hospital starts as "pending"
@@ -115,6 +129,7 @@ async def signup(user_data: UserCreate):
             "success": True,
             "message": "Hospital account created! Your registration is under review. You'll be listed publicly once verified.",
             "user_id": user_id,
+            "hospital_platform_id": hospital_platform_id,
             "verification_required": True,
             "verification_status": "pending"
         }
