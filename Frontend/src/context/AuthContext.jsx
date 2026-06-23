@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const API_BASE_URL = "http://localhost:8000";
+  const API_BASE_URL = "http://https://sehat-sathi-ce58.onrender.com";
 
   useEffect(() => {
     const storedUser = localStorage.getItem("sehat_sathi_user");

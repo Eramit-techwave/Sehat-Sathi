@@ -16,7 +16,7 @@ export default function PendingVerification() {
     setStatusMsg("");
     try {
       const token = localStorage.getItem("sehat_sathi_token");
-      const res = await fetch("http://localhost:8000/auth/verification-status", {
+      const res = await fetch("http://https://sehat-sathi-ce58.onrender.com/auth/verification-status", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

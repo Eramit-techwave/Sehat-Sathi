@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, CheckCheck, X, Clock } from "lucide-react";
 
-const API = "http://localhost:8000";
+const API = "http://https://sehat-sathi-ce58.onrender.com";
 
 const TYPE_CONFIG = {
   appointment_booked: { icon: "📅", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },

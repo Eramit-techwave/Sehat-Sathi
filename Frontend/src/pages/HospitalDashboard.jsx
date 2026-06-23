@@ -6,7 +6,7 @@ import {
   Activity, Users, Calendar, Building2
 } from "lucide-react";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "http://https://sehat-sathi-ce58.onrender.com";
 const inputStyle = {
   width: "100%", background: "#060b16", border: "1px solid rgba(255,255,255,0.07)",
   borderRadius: 10, padding: "12px 14px", color: "#e2e8f0", fontSize: 13,
