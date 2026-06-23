@@ -150,7 +150,7 @@ async def login(credentials: UserLogin):
     if not user or not verify_password(credentials.password, user["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid Credentials (Email ya Password galat hai)"
+            detail="Invalid Credentials (Email or Password worng). Please check and try again.",
         )
     role = user.get("role", "Patient")
 

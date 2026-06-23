@@ -636,7 +636,7 @@ export default function LandingPage() {
                           <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5 }}>A unique platform ID (e.g. <code style={{ color: "#fbbf24" }}>HSP548921</code>) will be generated automatically upon registration. No manual entry needed.</div>
                         </div>
                       </div>
-                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>⚠️ Your hospital will be listed publicly only after admin verification.</p>
+                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>⚠️ Congratulation Your hospital will be listed publicly only after admin verification.</p>
                     </div>
                   )}
                 </>
@@ -644,7 +644,7 @@ export default function LandingPage() {
               
               <div>
                 <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>EMAIL NETWORK KEY</label>
-                <input className="input-field" type="email" required placeholder="name@domain.com" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                <input className="input-field" type="email" required placeholder="Enter Your Email" value={email} onChange={e => setEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
               </div>
               
               <div>
@@ -746,9 +746,10 @@ export default function LandingPage() {
             <div style={{ fontSize: 52, marginBottom: 16 }}>🔍</div>
             <h3 style={{ fontSize: 22, fontWeight: 800, color: "#ffffff", marginBottom: 8 }}>Account Under Review</h3>
             <p style={{ fontSize: 13, color: "#94a3b8", lineHeight: 1.7, marginBottom: 24 }}>
-              Your registration has been submitted successfully! Our admin team will review your credentials and credentials within <strong style={{ color: "#60a5fa" }}>24–48 hours</strong>.
+              Your registration has been submitted successfully! Our admin team will review your credentials and credentials within and you will get approved  <strong style={{ color: "#60a5fa" }}>24–48 hours</strong>.
               <br /><br />
-              Once approved, you'll be able to log in and access your full dashboard.
+              Once approved, you'll be able to log in and access your full dashboard !.
+
             </p>
             <div style={{ background: "rgba(37,99,235,0.05)", border: "1px solid rgba(37,99,235,0.15)", borderRadius: 12, padding: "14px 18px", marginBottom: 24, textAlign: "left" }}>
               <div style={{ fontSize: 11, color: "#60a5fa", fontWeight: 700, marginBottom: 8 }}>WHAT HAPPENS NEXT</div>
@@ -760,7 +761,7 @@ export default function LandingPage() {
               ))}
             </div>
             <button className="btn-primary" style={{ width: "100%", fontSize: 13 }} onClick={() => { setSignupPending(false); setAuthMode("login"); setAuthOpen(true); }}>
-              Sign In When Ready →
+              Go For Sign In When Ready →
             </button>
           </div>
         </div>
