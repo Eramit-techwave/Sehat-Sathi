@@ -604,11 +604,11 @@ export default function LandingPage() {
                 <>
                   <div>
                     <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>FULL NAME</label>
-                    <input className="input-field" type="text" required placeholder="Amit Dubey" value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                    <input className="input-field" type="text" required placeholder="Enter Your Name " value={name} onChange={e => setName(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                   </div>
                   <div>
                     <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>REGISTER AS</label>
-                    {/* ⚠️ SECURITY: Admin option intentionally excluded from public registration */}
+                    
                     <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)} style={selectStyle}>
                       <option value="Patient">🧑 Patient</option>
                       <option value="Doctor">👨‍⚕️ Doctor / Specialist</option>
@@ -717,7 +717,7 @@ export default function LandingPage() {
               <form onSubmit={handleForgotSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={{ fontSize: 10, color: "#475569", fontWeight: 700, display: "block", marginBottom: 6, letterSpacing: "0.04em" }}>REGISTERED EMAIL ADDRESS</label>
-                  <input className="input-field" type="email" required placeholder="name@domain.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                  <input className="input-field" type="email" required placeholder="Enter Your Email ID" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} style={{ width: "100%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 14px", color: "#fff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
                 </div>
                 <button type="submit" className="btn-primary" disabled={forgotLoading} style={{ marginTop: 4, width: "100%", fontSize: 13, opacity: forgotLoading ? 0.7 : 1, cursor: forgotLoading ? "not-allowed" : "pointer" }}>
                   {forgotLoading ? "Dispatching Link..." : "Send Reset Link →"}
