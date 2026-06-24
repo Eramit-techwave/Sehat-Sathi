@@ -7,7 +7,7 @@ import {
   Phone, MapPin, Search, X, LogOut, TrendingUp, Clock, ChevronLeft
 } from "lucide-react";
 
-const API_BASE = "http://https://sehat-sathi-ce58.onrender.com";
+const API_BASE = "https://sehat-sathi-ce58.onrender.com";
 
 const inputStyle = {
   width: "100%", background: "#060b16", border: "1px solid rgba(255,255,255,0.07)",

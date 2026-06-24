@@ -23,7 +23,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch("http://https://sehat-sathi-ce58.onrender.com/auth/reset-password", {
+      const response = await fetch("https://sehat-sathi-ce58.onrender.com/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: newPassword }),

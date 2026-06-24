@@ -7,7 +7,7 @@ import {
   Trash2, Zap, Award, Building2
 } from "lucide-react";
 
-const API = "http://https://sehat-sathi-ce58.onrender.com";
+const API = "https://sehat-sathi-ce58.onrender.com";
 
 function useAdminAPI() {
   const token = localStorage.getItem("sehat_sathi_token");
@@ -730,7 +730,7 @@ export default function AdminDashboard() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       {/* Avatar */}
                       {u.profile_photo_url ? (
-                        <img src={`http://https://sehat-sathi-ce58.onrender.com${u.profile_photo_url}`} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                        <img src={`https://sehat-sathi-ce58.onrender.com${u.profile_photo_url}`} alt="" style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(37,99,235,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: "#60a5fa", fontWeight: 700, flexShrink: 0 }}>
                           {(u.name || "?")[0].toUpperCase()}
