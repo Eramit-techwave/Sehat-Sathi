@@ -274,10 +274,10 @@ async def verify_hospital(
     # Notify hospital
     if new_status == "approved":
         notif_title = "Hospital Verified! 🏥"
-        notif_msg = "Your hospital is now verified and publicly listed on SehatSathi. Patients can find and book appointments."
+        notif_msg = "Your hospital has been now verified and publicly listed on Sehat-Sathi. Patients can find and book appointments."
     else:
         notif_title = "Verification Update"
-        notif_msg = f"Your hospital registration was not approved. Reason: {action_data.reason}"
+        notif_msg = f"Your hospital registration was not approved Please try to contact with our Tech Support team. Reason: {action_data.reason}"
 
     await db["notifications"].insert_one({
         "user_id": hospital_user_id,

@@ -67,7 +67,7 @@ async def connect_to_mongo():
         print("✅ Successfully connected to MongoDB Atlas Cloud Database!")
         print("✅ All collection indexes initialized.")
     except Exception as e:
-        print(f"❌ MongoDB Atlas cloud connection failed: {e}")
+        print(f"❌ MongoDB Atlas cloud connection has been failed: {e}")
 
 async def close_mongo_connection():
     global client

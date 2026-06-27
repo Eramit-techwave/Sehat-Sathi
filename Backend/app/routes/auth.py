@@ -36,7 +36,7 @@ async def signup(user_data: UserCreate):
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Yeh email ID pehle se registered hai node par."
+            detail="This E-mail ID Already exits in our system! Please try to Singup with another ID."
         )
 
     # ⚠️  SECURITY FIX: Admin role CANNOT be self-registered via the public API.
