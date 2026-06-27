@@ -531,7 +531,7 @@ export default function LandingPage() {
             Find Blood Donors When<br />You Need Them
           </h2>
           <p style={{ fontSize: 14, color: "#94a3b8", maxWidth: 600, margin: "0 auto" }}>
-            Connect with verified blood donors in your area. Request blood during emergencies or register as a donor to help save lives.
+            Connect with verifiyed blood donors in your area. Request blood during emergencies or register as a donor to help save lives.
           </p>
         </div>
 
@@ -632,11 +632,11 @@ export default function LandingPage() {
                       <div style={{ display: "flex", alignItems: "flex-start", gap: 8, background: "rgba(245,158,11,0.04)", borderRadius: 8, padding: "10px 12px" }}>
                         <span style={{ fontSize: 14, flexShrink: 0 }}>🏥</span>
                         <div>
-                          <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600, marginBottom: 2 }}>Unique Hospital ID will be auto-assigned</div>
+                          <div style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600, marginBottom: 2 }}>Unique Hospital ID will be auto-assigned for your hospital</div>
                           <div style={{ fontSize: 10, color: "#64748b", lineHeight: 1.5 }}>A unique platform ID (e.g. <code style={{ color: "#fbbf24" }}>HSP548921</code>) will be generated automatically upon registration. No manual entry needed.</div>
                         </div>
                       </div>
-                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>⚠️ Congratulation Your hospital will be listed publicly only after admin verification.</p>
+                      <p style={{ fontSize: 10, color: "#64748b", marginTop: 8 }}>⚠️ Congratulation Your hospital will be listed publicly only once after admin verification.</p>
                     </div>
                   )}
                 </>
