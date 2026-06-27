@@ -239,7 +239,7 @@ async def forgot_password(payload: dict):
     user = await db["users"].find_one({"email": email})
     if not user:
         # Security practice: Don't leak if email exists, just say sent
-        return {"success": True, "message": "Agar yeh email registered hai, toh reset link bhej diya gaya hai."}
+        return {"success": True, "message": "If this E-Mail is registered with us then reset link has been send successfully."}
 
     # Generate temporary 15-minute secure token for reset path
     reset_token = create_access_token(
