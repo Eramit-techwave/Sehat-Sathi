@@ -121,6 +121,17 @@ class DoctorProfile(BaseModel):
     medical_reg_number: Optional[str] = None
     license_details: Optional[str] = None
     consultation_fee: Optional[int] = None
+    # ── LOCATION FIELDS (Phase 3 — additive, fully optional) ─────────
+    clinic_address: Optional[str] = Field(None, description="Full clinic/hospital address")
+    clinic_city: Optional[str] = Field(None, description="City where clinic is located")
+    clinic_state: Optional[str] = Field(None, description="State")
+    clinic_pincode: Optional[str] = Field(None, description="PIN / ZIP code")
+    clinic_lat: Optional[float] = Field(None, description="Latitude for Google Maps")
+    clinic_lng: Optional[float] = Field(None, description="Longitude for Google Maps")
+    # ── ADDITIONAL PROFILE FIELDS ────────────────────────────────────
+    languages: Optional[List[str]] = Field(None, description="Languages spoken by doctor")
+    gender: Optional[str] = Field(None, description="'Male' | 'Female' | 'Other'")
+    online_status: Optional[str] = Field(None, description="'online' | 'offline' | 'busy'")
 
 # 🗓️ DOCTOR AVAILABILITY
 # Structure: { "Monday": ["09:00 AM", "10:00 AM"], "Tuesday": [...], ... }
@@ -144,6 +155,14 @@ class HospitalProfile(BaseModel):
     website: Optional[str] = None
     registration_number: Optional[str] = None
     bed_counts: Optional[Dict[str, int]] = None
+    # ── LOCATION FIELDS (Phase 3 — additive, fully optional) ─────────
+    city: Optional[str] = Field(None, description="Hospital city")
+    state: Optional[str] = Field(None, description="Hospital state")
+    pincode: Optional[str] = Field(None, description="PIN / ZIP code")
+    lat: Optional[float] = Field(None, description="Latitude for Google Maps")
+    lng: Optional[float] = Field(None, description="Longitude for Google Maps")
+    opening_hours: Optional[str] = Field(None, description="e.g. Mon-Sat 8AM-8PM, Sun 9AM-5PM")
+    emergency_phone: Optional[str] = Field(None, description="Direct emergency contact number")
 
 class BedAvailabilityUpdate(BaseModel):
     general: Optional[bool] = None

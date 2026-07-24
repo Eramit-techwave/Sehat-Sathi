@@ -62,6 +62,32 @@ async def connect_to_mongo():
         # Donors lookup
         await db["donors"].create_index([("bloodGroup", 1), ("city", 1)])
 
+        # ── V2 INDEXES ────────────────────────────────────────────────
+
+        # Prescriptions: fast lookup by doctor/patient, sorted by created_at
+        await db["prescriptions"].create_index([("doctor_id", 1), ("created_at", -1)])
+        await db["prescriptions"].create_index([("patient_id", 1), ("created_at", -1)])
+        await db["prescriptions"].create_index([("appointment_id", 1)])
+
+        # Follow-ups: sorted by due_date for reminder queries
+        await db["follow_ups"].create_index([("patient_id", 1), ("due_date", 1)])
+        await db["follow_ups"].create_index([("doctor_id", 1), ("due_date", 1)])
+        await db["follow_ups"].create_index([("patient_id", 1), ("status", 1)])
+
+        # Queue entries: fast daily queue lookup
+        await db["queue_entries"].create_index([("hospital_id", 1), ("date", 1), ("position", 1)])
+        await db["queue_entries"].create_index([("patient_id", 1), ("date", 1)])
+
+        # Lab orders: doctor → patient lookup
+        await db["lab_orders"].create_index([("doctor_id", 1), ("created_at", -1)])
+        await db["lab_orders"].create_index([("patient_id", 1), ("created_at", -1)])
+        await db["lab_orders"].create_index([("status", 1)])
+
+        # Referrals: incoming + outgoing per doctor
+        await db["referrals"].create_index([("referring_doctor_id", 1), ("created_at", -1)])
+        await db["referrals"].create_index([("referred_to_doctor_id", 1), ("status", 1)])
+        await db["referrals"].create_index([("patient_id", 1), ("created_at", -1)])
+
         # Connection verification ping
         await client.admin.command('ping')
         print("✅ Successfully connected to MongoDB Atlas Cloud Database!")

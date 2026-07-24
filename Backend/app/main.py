@@ -7,6 +7,8 @@ import os
 from app.database import connect_to_mongo, close_mongo_connection
 from app.routes import auth, reports, users, appointments, doctors, donors
 from app.routes import admin, notifications, hospitals
+# ── V2 MODULES ────────────────────────────────────────────────────────────────────────────────
+from app.routes import prescriptions, followups, timeline, queue, lab_orders, referrals
 from app.config import settings
 
 # 🚀 INITIALIZE FASTAPI APP ENGINE
@@ -61,6 +63,14 @@ app.include_router(admin.router)
 app.include_router(notifications.router)
 app.include_router(hospitals.router)
 
+# ── V2 MODULES ────────────────────────────────────────────────────────────────────
+app.include_router(prescriptions.router)  # Digital Prescriptions
+app.include_router(followups.router)       # Smart Follow-up Engine
+app.include_router(timeline.router)        # Workflow Timeline
+app.include_router(queue.router)           # Hospital Queue Management
+app.include_router(lab_orders.router)      # Smart Lab Workflow
+app.include_router(referrals.router)       # Referral Engine
+
 # 📁 STATIC FILES — Profile Photos
 _photos_dir = os.path.join(os.path.dirname(__file__), "..", "stored_reports", "profile_photos")
 os.makedirs(_photos_dir, exist_ok=True)
@@ -72,10 +82,10 @@ def root_check():
     return {
         "status": "online",
         "framework": "FastAPI Asynchronous Grid",
-        "version": "3.0.0",
+        "version": "3.0.0 (V2 Active)",
         "database_target": settings.DATABASE_NAME,
         "security": "RBAC v2 — Admin self-signup blocked",
-        "features": [
+        "v1_features": [
             "Role-Based Auth (Patient/Doctor/Hospital/Admin)",
             "Doctor & Hospital Verification Workflow",
             "In-App Notification System",
@@ -83,5 +93,13 @@ def root_check():
             "AI Report Analysis",
             "Hospital Public Discovery",
             "Admin Control Panel"
+        ],
+        "v2_features": [
+            "Digital Prescription System",
+            "Smart Follow-up Engine",
+            "Workflow Timeline",
+            "Hospital Queue Management",
+            "Smart Lab Workflow",
+            "Referral Engine"
         ]
     }
