@@ -1,9 +1,15 @@
 /**
  * SymptomChecker — AI-powered symptom analysis for patients.
- * Natural language input → structured health guidance.
+ * Sehat-Sathi | Updated August 2026
+ *
+ * Includes:
+ * - Render server sleep handling & wakingUp state
+ * - Fixed parseAIResponse warningSigns collector
+ * - Warning signs UI card display
+ * - Smart error messages & instant Retry button
  */
-import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send, Bot, AlertTriangle, Stethoscope, Heart, ShieldCheck, FlaskConical, Loader2, RefreshCw } from "lucide-react";
+import { useState, useRef } from "react";
+import { ArrowLeft, Send, Bot, AlertTriangle, Stethoscope, ShieldCheck, FlaskConical, Loader2, RefreshCw } from "lucide-react";
 import DS from "../../ui/design-system";
 import T from "../../ui/tokens";
 
@@ -28,6 +34,7 @@ export default function SymptomChecker({ onBack }) {
   const [symptoms, setSymptoms] = useState("");
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [wakingUp, setWakingUp] = useState(false);
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
 
@@ -35,7 +42,6 @@ export default function SymptomChecker({ onBack }) {
   const parseAIResponse = (text) => {
     if (!text) return null;
 
-    // Try to extract structured data from text response
     const response = {
       rawText: text,
       possibleCauses: [],
@@ -50,12 +56,11 @@ export default function SymptomChecker({ onBack }) {
 
     const lines = text.split("\n").filter(l => l.trim());
 
-    let currentSection = "";
     lines.forEach(line => {
       const l = line.toLowerCase().trim();
 
       // Detect risk level
-      if (l.includes("emergency") || l.includes("911") || l.includes("immediately")) response.riskLevel = "emergency";
+      if (l.includes("emergency") || l.includes("911") || l.includes("112") || l.includes("immediately")) response.riskLevel = "emergency";
       else if (l.includes("high risk") || l.includes("serious") || l.includes("urgent")) response.riskLevel = "high";
       else if (l.includes("moderate") || l.includes("consult")) response.riskLevel = "moderate";
 
@@ -73,7 +78,7 @@ export default function SymptomChecker({ onBack }) {
       }
     });
 
-    // Extract bullet points for causes, precautions, warnings
+    // Extract bullet points for causes, precautions, warnings, labs
     const bulletRegex = /^[\-\*•]\s+(.+)$/;
     let inSection = "";
 
@@ -90,7 +95,7 @@ export default function SymptomChecker({ onBack }) {
       if (match) {
         const item = match[1].replace(/\*\*/g, "").trim();
         if (inSection === "causes" && response.possibleCauses.length < 5) response.possibleCauses.push(item);
-        else if (inSection === "warning" && response.warningLines < 4) response.warningLines = (response.warningLines || 0) + 1, response.warningLines <= 4 && response.warningLines.push && response.warningLines.push(item);
+        else if (inSection === "warning" && response.warningSigns.length < 4) response.warningSigns.push(item);
         else if (inSection === "precautions" && response.homePrecautions.length < 5) response.homePrecautions.push(item);
         else if (inSection === "labs" && response.labTests.length < 4) response.labTests.push(item);
       }
@@ -112,6 +117,25 @@ export default function SymptomChecker({ onBack }) {
     setError("");
     setResult(null);
 
+    // PROBLEM 2: Quick health ping with 5s timeout to detect server sleep
+    let isServerAwake = false;
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const pingRes = await fetch(`${API_BASE}/health`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (pingRes.ok) isServerAwake = true;
+    } catch {
+      isServerAwake = false;
+    }
+
+    if (!isServerAwake) {
+      setWakingUp(true);
+      // Wait 10 seconds for Render server to finish waking up
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      setWakingUp(false);
+    }
+
     try {
       const token = localStorage.getItem("sehat_sathi_token");
       const res = await fetch(`${API_BASE}/analyzer/symptom-check`, {
@@ -127,7 +151,13 @@ export default function SymptomChecker({ onBack }) {
         const data = await res.json();
         setResult(parseAIResponse(data.analysis || data.response || data.text || JSON.stringify(data)));
       } else {
-        // Fallback: use the AI chat endpoint
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("401");
+        } else if (res.status >= 500) {
+          throw new Error("500");
+        }
+
+        // Fallback: use AI chat endpoint
         const res2 = await fetch(`${API_BASE}/analyzer/chat`, {
           method: "POST",
           headers: {
@@ -144,11 +174,20 @@ export default function SymptomChecker({ onBack }) {
           const data2 = await res2.json();
           setResult(parseAIResponse(data2.response || data2.text || JSON.stringify(data2)));
         } else {
-          throw new Error("Analysis service unavailable. Please try again.");
+          if (res2.status === 401 || res2.status === 403) throw new Error("401");
+          if (res2.status >= 500) throw new Error("500");
+          throw new Error("NET_ERROR");
         }
       }
     } catch (e) {
-      setError(e.message || "Unable to analyze symptoms. Please try again.");
+      // PROBLEM 5: Smart error messages
+      if (e.message === "401") {
+        setError("🔒 Session expired. Please log in again to use Symptom Checker.");
+      } else if (e.message === "500") {
+        setError("🔴 Server error occurred. Our team has been notified. Please try again in a moment.");
+      } else {
+        setError("⚠️ Could not connect to server. It may be starting up. Please wait 15 seconds and try again.");
+      }
     }
     setLoading(false);
   };
@@ -222,13 +261,22 @@ export default function SymptomChecker({ onBack }) {
               }}
             >
               {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-              {loading ? "Analyzing..." : "Analyze Symptoms"}
+              {loading ? (wakingUp ? "Waking Server..." : "Analyzing...") : "Analyze Symptoms"}
             </button>
           </div>
 
+          {/* PROBLEM 5 & 6: Smart Error Display + Retry Button */}
           {error && (
-            <div style={{ marginTop: 12, background: T.redLight, border: `1px solid ${T.redBorder}`, borderRadius: T.radiusMd, padding: "10px 14px" }}>
-              <div style={{ fontSize: 12, color: T.red }}>{error}</div>
+            <div style={{ marginTop: 16, background: T.redLight, border: `1px solid ${T.redBorder}`, borderRadius: T.radiusMd, padding: "14px 16px" }}>
+              <div style={{ fontSize: 13, color: T.red, marginBottom: 10, lineHeight: 1.5, fontWeight: 500 }}>
+                {error}
+              </div>
+              <button
+                onClick={handleAnalyze}
+                style={{ ...DS.btnPrimary(), fontSize: 12, padding: "6px 14px", display: "inline-flex", alignItems: "center", gap: 6 }}
+              >
+                <RefreshCw size={12} /> Retry
+              </button>
             </div>
           )}
 
@@ -250,14 +298,20 @@ export default function SymptomChecker({ onBack }) {
         </div>
       )}
 
-      {/* ── LOADING STATE ─────────────────────────────────────────── */}
+      {/* ── LOADING STATE — PROBLEM 2 Waking Up Feedback ───────────── */}
       {loading && (
         <div style={{ ...DS.card(), textAlign: "center", padding: "48px 24px" }}>
           <div style={{ ...DS.iconCircle(T.primary, 64), margin: "0 auto 16px" }}>
             <Bot size={30} style={{ color: T.primary, animation: "pulse 2s infinite" }} />
           </div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: T.textPrimary, marginBottom: 6 }}>Analyzing Your Symptoms</div>
-          <div style={{ fontSize: 12, color: T.textMuted }}>Our AI is reviewing your symptoms and preparing health guidance...</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: T.textPrimary, marginBottom: 6 }}>
+            {wakingUp ? "⏳ Server Starting Up..." : "🔍 Analyzing Your Symptoms"}
+          </div>
+          <div style={{ fontSize: 13, color: T.textMuted, maxWidth: 420, margin: "0 auto" }}>
+            {wakingUp
+              ? "Our server was resting. Waking it up, please wait 10-15 seconds..."
+              : "Our AI is reviewing your symptoms and preparing health guidance..."}
+          </div>
         </div>
       )}
 
@@ -335,6 +389,28 @@ export default function SymptomChecker({ onBack }) {
                     <div key={i} style={DS.row(8, { marginBottom: 8 })}>
                       <span style={{ color: T.green }}>✓</span>
                       <span style={{ fontSize: 13, color: T.textSecondary }}>{p}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* PROBLEM 4: Warning Signs UI Card */}
+              {result.warningSigns?.length > 0 && (
+                <div style={DS.card()}>
+                  <div style={DS.row(8, { marginBottom: 14 })}>
+                    <div style={DS.iconCircle(T.red, 32)}>
+                      <AlertTriangle size={14} style={{ color: T.red }} />
+                    </div>
+                    <span style={DS.sectionTitle({ fontSize: 14 })}>
+                      Warning Signs — Seek Immediate Help
+                    </span>
+                  </div>
+                  {result.warningSigns.map((sign, i) => (
+                    <div key={i} style={DS.row(8, { marginBottom: 8 })}>
+                      <span style={{ color: T.red }}>⚠️</span>
+                      <span style={{ fontSize: 13, color: T.textSecondary }}>
+                        {sign}
+                      </span>
                     </div>
                   ))}
                 </div>

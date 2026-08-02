@@ -8,7 +8,7 @@ from app.database import connect_to_mongo, close_mongo_connection
 from app.routes import auth, reports, users, appointments, doctors, donors
 from app.routes import admin, notifications, hospitals
 # ── V2 MODULES ────────────────────────────────────────────────────────────────────────────────
-from app.routes import prescriptions, followups, timeline, queue, lab_orders, referrals
+from app.routes import prescriptions, followups, timeline, queue, lab_orders, referrals, invoices
 from app.config import settings
 
 # 🚀 INITIALIZE FASTAPI APP ENGINE
@@ -70,6 +70,7 @@ app.include_router(timeline.router)        # Workflow Timeline
 app.include_router(queue.router)           # Hospital Queue Management
 app.include_router(lab_orders.router)      # Smart Lab Workflow
 app.include_router(referrals.router)       # Referral Engine
+app.include_router(invoices.router)        # Payment Invoice Engine
 
 # 📁 STATIC FILES — Profile Photos
 _photos_dir = os.path.join(os.path.dirname(__file__), "..", "stored_reports", "profile_photos")

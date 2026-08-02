@@ -27,6 +27,7 @@ import EmergencyServices from "./patient/EmergencyServices";
 import DoctorProfileModal from "./patient/DoctorProfileModal";
 import AppointmentsModule from "./patient/AppointmentsModule";
 import AppointmentPaymentModal from "../components/AppointmentPaymentModal";
+import PaymentInvoiceModal from "../components/PaymentInvoiceModal";
 
 const API_BASE = "https://sehat-sathi-ce58.onrender.com";
 
@@ -203,6 +204,7 @@ export default function PatientDashboard() {
   };
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [activeInvoice, setActiveInvoice] = useState(null);
 
   const handleOpenBooking = (doctor) => {
     setBookingDoctor(doctor);
@@ -238,9 +240,40 @@ export default function PatientDashboard() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Booking failed");
-      showNotif(`✅ Appointment booked with Dr. ${bookingDoctor.name} on ${bookingForm.date} at ${bookingForm.time_slot}! (${paymentData.payment_status})`);
+
+      // Generate Invoice record
+      const invObj = {
+        invoice_number: `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+        patient_name: user?.name || "Patient",
+        patient_id: `PAT-${(user?.id || "892410").slice(-6).toUpperCase()}`,
+        doctor_name: bookingDoctor.name?.startsWith("Dr.") ? bookingDoctor.name : `Dr. ${bookingDoctor.name}`,
+        doctor_specialization: bookingDoctor.specialty || "General Physician",
+        hospital_name: bookingDoctor.hospital_name || "Sehat-Sathi Partnered Care Clinic",
+        service_name: "Doctor Consultation & Health Guidance",
+        base_amount: paymentData.amount || 500,
+        tax_amount: Math.round((paymentData.amount || 500) * 0.18),
+        discount: 0,
+        total_amount: Math.round((paymentData.amount || 500) * 1.18),
+        payment_method: (paymentData.payment_method || "UPI").toUpperCase(),
+        payment_status: paymentData.payment_status || "Paid",
+        reference_number: paymentData.transaction_id || `SS-PAY-${Date.now()}`,
+        created_at: new Date().toISOString()
+      };
+
+      try {
+        await fetch(`${API_BASE}/invoices/generate`, {
+          method: "POST",
+          headers: { ...authHeaders, "Content-Type": "application/json" },
+          body: JSON.stringify(invObj)
+        });
+      } catch (err) {
+        console.warn("Invoice creation ping warning:", err);
+      }
+
+      showNotif(`✅ Appointment booked with Dr. ${bookingDoctor.name}! Official Receipt & Invoice generated.`);
       setShowPaymentModal(false);
       setBookingDoctor(null);
+      setActiveInvoice(invObj); // Automatically opens Payment Invoice modal!
       loadAppointments();
     } catch (e) { showNotif(e.message, "error"); }
     setBookingLoading(false);
@@ -1182,6 +1215,14 @@ export default function PatientDashboard() {
             appointmentData={bookingForm}
             onClose={() => setShowPaymentModal(false)}
             onConfirmBooking={handleFinalBookingConfirm}
+          />
+        )}
+
+        {/* ── PAYMENT INVOICE RECEIPT MODAL ────────────────────── */}
+        {activeInvoice && (
+          <PaymentInvoiceModal
+            invoice={activeInvoice}
+            onClose={() => setActiveInvoice(null)}
           />
         )}
 

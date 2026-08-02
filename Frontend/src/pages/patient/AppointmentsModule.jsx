@@ -3,7 +3,9 @@
  * Extracted from PatientDashboard.jsx for single-responsibility and mobile performance.
  * Receives all state as props — no internal API calls.
  */
-import { Calendar, Loader2, ChevronLeft, Clock, CheckCircle2, XCircle, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Calendar, Loader2, ChevronLeft, Clock, CheckCircle2, XCircle, RefreshCw, FileText } from "lucide-react";
+import PaymentInvoiceModal from "../../components/PaymentInvoiceModal";
 
 const STATUS_CONFIG = {
   Confirmed:  { bg: "var(--green-light)",  color: "var(--green)",   border: "var(--green-border)",  label: "Confirmed",  dot: "🟢" },
@@ -23,6 +25,7 @@ export default function AppointmentsModule({
   onReschedule,
   onCancel,
 }) {
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
   const inputStyle = {
     width: "100%", background: "var(--surface)", border: "1px solid var(--border-strong)",
     borderRadius: "var(--radius-md)", padding: "10px 13px", color: "var(--text)",
@@ -110,32 +113,61 @@ export default function AppointmentsModule({
                 </div>
 
                 {/* Action Buttons */}
-                {apt.status !== "Cancelled" && apt.status !== "Completed" && (
-                  <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
-                    <button
-                      onClick={() => setRescheduleTarget(rescheduleTarget === apt.id ? null : apt.id)}
-                      style={{
-                        padding: "8px 14px", background: "var(--primary-light)",
-                        border: "1px solid var(--primary-border)", color: "var(--primary)",
-                        borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
-                      }}
-                    >
-                      <RefreshCw size={11} /> Reschedule
-                    </button>
-                    <button
-                      onClick={() => onCancel(apt.id)}
-                      style={{
-                        padding: "8px 14px", background: "var(--red-light)",
-                        border: "1px solid var(--red-border)", color: "var(--red)",
-                        borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                        display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
-                      }}
-                    >
-                      <XCircle size={11} /> Cancel
-                    </button>
-                  </div>
-                )}
+                <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap" }}>
+                  <button
+                    onClick={() => setSelectedInvoice({
+                      invoice_number: `INV-2026-${(apt.id || "8924").slice(-5)}`,
+                      patient_name: "Patient",
+                      doctor_name: apt.doctor_name || "Dr. Specialist",
+                      doctor_specialization: "Consultant Physician",
+                      hospital_name: "Sehat-Sathi Partnered Clinic",
+                      service_name: "Doctor Consultation & Health Guidance",
+                      base_amount: apt.amount || 500,
+                      tax_amount: Math.round((apt.amount || 500) * 0.18),
+                      discount: 0,
+                      total_amount: Math.round((apt.amount || 500) * 1.18),
+                      payment_method: (apt.payment_method || "UPI").toUpperCase(),
+                      payment_status: apt.payment_status || "Paid",
+                      reference_number: apt.transaction_id || `SS-PAY-${(apt.id || "8924").slice(-6)}`,
+                      created_at: apt.created_at || apt.date
+                    })}
+                    style={{
+                      padding: "8px 14px", background: "rgba(16,185,129,0.1)",
+                      border: "1px solid rgba(16,185,129,0.3)", color: "#059669",
+                      borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                    }}
+                  >
+                    <FileText size={12} /> View Invoice Slip
+                  </button>
+
+                  {apt.status !== "Cancelled" && apt.status !== "Completed" && (
+                    <>
+                      <button
+                        onClick={() => setRescheduleTarget(rescheduleTarget === apt.id ? null : apt.id)}
+                        style={{
+                          padding: "8px 14px", background: "var(--primary-light)",
+                          border: "1px solid var(--primary-border)", color: "var(--primary)",
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                        }}
+                      >
+                        <RefreshCw size={11} /> Reschedule
+                      </button>
+                      <button
+                        onClick={() => onCancel(apt.id)}
+                        style={{
+                          padding: "8px 14px", background: "var(--red-light)",
+                          border: "1px solid var(--red-border)", color: "var(--red)",
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                        }}
+                      >
+                        <XCircle size={11} /> Cancel
+                      </button>
+                    </>
+                  )}
+                </div>
 
                 {/* Reschedule form */}
                 {rescheduleTarget === apt.id && (
@@ -177,6 +209,14 @@ export default function AppointmentsModule({
             );
           })}
         </div>
+      )}
+
+      {/* ── PAYMENT INVOICE RECEIPT MODAL ────────────────────── */}
+      {selectedInvoice && (
+        <PaymentInvoiceModal
+          invoice={selectedInvoice}
+          onClose={() => setSelectedInvoice(null)}
+        />
       )}
     </div>
   );

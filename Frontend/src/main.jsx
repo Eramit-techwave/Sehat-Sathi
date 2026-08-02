@@ -5,7 +5,11 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
+import { keepServerAwake } from './utils/keepAlive.js'
 import './index.css'
+
+// Start server keep-alive loop on app launch
+keepServerAwake();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -19,4 +23,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>,
-)
+)
