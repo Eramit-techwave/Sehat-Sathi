@@ -52,25 +52,78 @@ async def list_public_hospitals(
         if user:
             # Count doctors affiliated with this hospital
             doctor_count = await db["doctors"].count_documents({
-                "hospital_id": hosp["user_id"],
-                "verification_status": "approved"
+                "verification_status": "approved",
+                "$or": [
+                    {"hospital_id": hosp["user_id"]},
+                    {"hospital_associations.hospital_id": hosp["user_id"]},
+                ],
             })
             result.append({
                 "id": hosp["user_id"],
                 "name": user.get("name"),
                 "address": hosp.get("address", ""),
+                "city": hosp.get("city", ""),
+                "state": hosp.get("state", ""),
+                "pincode": hosp.get("pincode", ""),
+                "lat": hosp.get("lat"),
+                "lng": hosp.get("lng"),
                 "phone": hosp.get("phone") or user.get("phone"),
                 "website": hosp.get("website", ""),
                 "departments": hosp.get("departments", []),
                 "facilities": hosp.get("facilities", []),
                 "bed_availability": hosp.get("bed_availability", {}),
                 "doctor_count": doctor_count,
+                "emergency_available": hosp.get("bed_availability", {}).get("emergency", False) or bool(hosp.get("emergency_phone")),
+                "emergency_phone": hosp.get("emergency_phone", ""),
+                "opening_hours": hosp.get("opening_hours", ""),
                 "announcements": [
                     a for a in hosp.get("announcements", [])
                     if not a.get("expires_at") or a.get("expires_at") > datetime.now().isoformat()
                 ][-3:]  # Show last 3 active announcements
             })
     return result
+
+
+@router.get("/{hospital_id}/doctors")
+async def list_hospital_doctors(hospital_id: str):
+    """Public hospital directory backed by the canonical doctor profile collection."""
+    db = get_db()
+    hospital = await db["hospitals"].find_one({
+        "user_id": hospital_id,
+        "verification_status": "approved",
+    })
+    if not hospital:
+        raise HTTPException(status_code=404, detail="Hospital not found or not yet verified")
+
+    profiles = await db["doctors"].find({
+        "verification_status": "approved",
+        "$or": [
+            {"hospital_id": hospital_id},
+            {"hospital_associations.hospital_id": hospital_id},
+        ],
+    }).to_list(length=100)
+
+    doctors = []
+    for profile in profiles:
+        try:
+            user = await db["users"].find_one({"_id": ObjectId(profile["user_id"])})
+        except Exception:
+            user = None
+        if not user:
+            continue
+        doctors.append({
+            "id": profile["user_id"],
+            "name": user.get("name", "Doctor"),
+            "profile_photo": user.get("profile_photo_url"),
+            "specialty": profile.get("specialty", "General Physician"),
+            "qualifications": profile.get("qualifications", ""),
+            "experience_years": profile.get("experience_years", 0),
+            "consultation_fee": profile.get("consultation_fee"),
+            "online_status": profile.get("online_status", "offline"),
+            "availability": profile.get("availability", {}),
+            "clinic_address": profile.get("clinic_address", ""),
+        })
+    return doctors
 
 
 @router.get("/{hospital_id}")
@@ -90,8 +143,11 @@ async def get_hospital_public_profile(hospital_id: str):
 
     # Get affiliated doctors (approved only)
     affiliated_doctors = await db["doctors"].find({
-        "hospital_id": hospital_id,
-        "verification_status": "approved"
+        "verification_status": "approved",
+        "$or": [
+            {"hospital_id": hospital_id},
+            {"hospital_associations.hospital_id": hospital_id},
+        ],
     }).to_list(length=50)
 
     doctors_list = []
@@ -111,12 +167,20 @@ async def get_hospital_public_profile(hospital_id: str):
         "id": hospital_id,
         "name": user.get("name"),
         "address": hosp.get("address", ""),
+        "city": hosp.get("city", ""),
+        "state": hosp.get("state", ""),
+        "pincode": hosp.get("pincode", ""),
+        "lat": hosp.get("lat"),
+        "lng": hosp.get("lng"),
         "phone": hosp.get("phone") or user.get("phone"),
         "website": hosp.get("website", ""),
         "departments": hosp.get("departments", []),
         "facilities": hosp.get("facilities", []),
         "bed_availability": hosp.get("bed_availability", {}),
         "bed_counts": hosp.get("bed_counts", {}),
+        "opening_hours": hosp.get("opening_hours", ""),
+        "emergency_phone": hosp.get("emergency_phone", ""),
+        "emergency_available": hosp.get("bed_availability", {}).get("emergency", False) or bool(hosp.get("emergency_phone")),
         "affiliated_doctors": doctors_list,
         "announcements": hosp.get("announcements", [])
     }
@@ -359,4 +423,3 @@ async def get_hospital_doctors(current_user: dict = Depends(verify_token)):
                 "association_role": assoc_role
             })
     return result
-

@@ -2304,3 +2304,65 @@ html.dark .glass-nav.scrolled { box-shadow: 0 2px 20px rgba(0,0,0,0.4); }
   background: #DC2626;
   box-shadow: 0 4px 14px rgba(239,68,68,0.25);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   AI SHOWCASE SECTION — Responsive Grid
+   ════════════════════════════════════════════════════════════════════ */
+
+.ai-showcase-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 640px) {
+  .ai-showcase-grid {
+    grid-template-columns: 1fr;
+  }
+  .ai-showcase-grid > div:first-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOOKING MODAL — fadeScale animation
+   ════════════════════════════════════════════════════════════════════ */
+
+@keyframes fadeScale {
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   GOOGLE TRANSLATE OVERRIDES — Clean Full-Page Translation
+   ════════════════════════════════════════════════════════════════════ */
+.goog-te-banner-frame,
+iframe.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+}
+body {
+  top: 0px !important;
+  position: static !important;
+}
+.goog-te-gadget-icon {
+  display: none !important;
+}
+.goog-te-gadget-simple {
+  background-color: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 10pt !important;
+  display: inline-block !important;
+}
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+

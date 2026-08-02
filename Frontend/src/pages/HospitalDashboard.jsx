@@ -58,15 +58,7 @@ export default function HospitalDashboard() {
     setTimeout(() => setNotification({ show: false, type, text: "" }), 4000);
   };
 
-  useEffect(() => {
-    loadAppointments();
-    loadProfile();
-    loadStats();
-  }, []);
 
-  useEffect(() => {
-    if (activeTab === "doctors") loadAffiliatedDoctors();
-  }, [activeTab]);
 
   // ── LOADERS ─────────────────────────────────────────────────────
 
@@ -137,6 +129,16 @@ export default function HospitalDashboard() {
     } catch (e) { console.error(e); }
     finally { setDoctorsLoading(false); }
   };
+
+  useEffect(() => {
+    loadAppointments();
+    loadProfile();
+    loadStats();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === "doctors") loadAffiliatedDoctors();
+  }, [activeTab]);
 
   // ── ACTIONS ─────────────────────────────────────────────────────
 

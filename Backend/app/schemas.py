@@ -57,10 +57,20 @@ class AppointmentCreate(BaseModel):
     date: str = Field(..., description="YYYY-MM-DD format")
     time_slot: str = Field(..., description="HH:MM AM/PM format")
     reason: Optional[str] = Field(None, description="Reason for appointment")
+    payment_method: Optional[str] = Field("cash", description="'upi' | 'card' | 'netbanking' | 'cash'")
+    payment_status: Optional[str] = Field("Pending", description="'Paid' | 'Pending' | 'Cash at Clinic'")
+    amount: Optional[float] = Field(0.0, description="Amount paid or payable in INR")
+    transaction_id: Optional[str] = Field(None, description="Transaction ID")
 
 class AppointmentReschedule(BaseModel):
     new_date: str = Field(..., description="New date in YYYY-MM-DD format")
     new_time_slot: str = Field(..., description="New time slot")
+
+class AppointmentStatusUpdate(BaseModel):
+    status: str = Field(..., description="'Confirmed' | 'Rescheduled' | 'Completed' | 'Cancelled'")
+    new_date: Optional[str] = Field(None, description="Optional new date in YYYY-MM-DD format")
+    new_time_slot: Optional[str] = Field(None, description="Optional new time slot")
+    doctor_note: Optional[str] = Field(None, description="Note or instructions for patient")
 
 class AppointmentResponse(BaseModel):
     id: str = Field(..., alias="_id")
@@ -73,6 +83,10 @@ class AppointmentResponse(BaseModel):
     doctor_name: Optional[str] = None
     patient_name: Optional[str] = None
     reason: Optional[str] = None
+    payment_method: Optional[str] = "cash"
+    payment_status: Optional[str] = "Pending"
+    amount: Optional[float] = 0.0
+    transaction_id: Optional[str] = None
 
     class Config:
         populate_by_name = True

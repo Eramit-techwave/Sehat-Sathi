@@ -9,6 +9,65 @@ from typing import List, Optional
 router = APIRouter(prefix="/doctors", tags=["Doctors"])
 
 
+async def _public_doctor_view(db, profile: dict) -> Optional[dict]:
+    """Build the one public doctor representation used by discovery surfaces."""
+    user_id = profile.get("user_id")
+    if not user_id:
+        return None
+
+    try:
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    except Exception:
+        return None
+    if not user:
+        return None
+
+    associations = profile.get("hospital_associations", [])
+    primary = next((item for item in associations if item.get("is_primary")), associations[0] if associations else {})
+    hospital_name = primary.get("hospital_name", "")
+    hospital_id = primary.get("hospital_id") or profile.get("hospital_id")
+    if hospital_id:
+        try:
+            hospital_user = await db["users"].find_one({"_id": ObjectId(hospital_id)})
+            hospital_name = hospital_user.get("name", hospital_name) if hospital_user else hospital_name
+        except Exception:
+            pass
+
+    return {
+        "id": user_id,
+        "name": user.get("name", "Doctor"),
+        "profile_photo_url": user.get("profile_photo_url"),
+        "specialty": profile.get("specialty", "General Physician"),
+        "qualifications": profile.get("qualifications", ""),
+        "experience_years": profile.get("experience_years", 0),
+        "consultation_fee": profile.get("consultation_fee"),
+        "languages": profile.get("languages", []),
+        "bio": profile.get("bio", ""),
+        "medical_reg_number": profile.get("medical_reg_number", ""),
+        "online_status": profile.get("online_status", "offline"),
+        "availability": profile.get("availability", {}),
+        "hospital_id": hospital_id,
+        "hospital_name": hospital_name or "Independent Practice",
+        "hospital_associations": associations,
+        "clinic_address": profile.get("clinic_address", ""),
+        "clinic_city": profile.get("clinic_city", ""),
+        "clinic_state": profile.get("clinic_state", ""),
+        "clinic_pincode": profile.get("clinic_pincode", ""),
+        "clinic_lat": profile.get("clinic_lat"),
+        "clinic_lng": profile.get("clinic_lng"),
+        "verification_status": profile.get("verification_status", "pending"),
+    }
+
+
+@router.get("")
+async def list_public_doctors():
+    """Canonical public doctor directory. Only approved profiles are exposed."""
+    db = get_db()
+    profiles = await db["doctors"].find({"verification_status": "approved"}).to_list(length=100)
+    doctors = [await _public_doctor_view(db, profile) for profile in profiles]
+    return [doctor for doctor in doctors if doctor]
+
+
 @router.get("/me")
 async def get_my_doctor_profile(current_user: dict = Depends(verify_token)):
     """Get doctor's own extended profile including hospital associations"""

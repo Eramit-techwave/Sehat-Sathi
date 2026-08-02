@@ -192,7 +192,7 @@ export default function PrescriptionPad({ user }) {
           <div style={{ display: "flex", gap: 8 }}>
             {["write", "history"].map(v => (
               <button key={v} onClick={() => setView(v)} style={{
-                padding: "8px 18px", borderRadius: 8, border: "none",
+                padding: "8px 18px", borderRadius: 8,
                 background: view === v ? C.primary : "transparent",
                 color: view === v ? "#fff" : C.textSecondary,
                 fontWeight: 600, fontSize: 13, cursor: "pointer",

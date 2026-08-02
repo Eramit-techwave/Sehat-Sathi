@@ -48,9 +48,6 @@ export default function FollowUpManager({ user }) {
     setTimeout(() => setNotification({ show: false, type, text: "" }), 4000);
   };
 
-  useEffect(() => { loadPatients(); }, []);
-  useEffect(() => { if (view === "list") loadFollowups(); }, [view]);
-
   const loadPatients = async () => {
     try {
       const res = await fetch(`${API_BASE}/doctors/${user?.id}/patients`, {
@@ -68,6 +65,9 @@ export default function FollowUpManager({ user }) {
     } catch (e) { }
     finally { setLoading(false); }
   };
+
+  useEffect(() => { loadPatients(); }, []);
+  useEffect(() => { if (view === "list") loadFollowups(); }, [view]);
 
   const handleCreate = async () => {
     if (!form.patient_id) return showNotif("Please select a patient", "error");
@@ -211,7 +211,7 @@ export default function FollowUpManager({ user }) {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
                 {FOLLOW_UP_TYPES.map(({ value, label, icon: Icon, color }) => (
                   <button key={value} onClick={() => setForm(f => ({ ...f, type: value }))} style={{
-                    padding: "12px 10px", borderRadius: 10, border: "none", cursor: "pointer", textAlign: "center",
+                    padding: "12px 10px", borderRadius: 10, cursor: "pointer", textAlign: "center",
                     background: form.type === value ? color + "15" : C.bg,
                     border: form.type === value ? `2px solid ${color}` : `1px solid ${C.border}`,
                     transition: "all 0.2s"

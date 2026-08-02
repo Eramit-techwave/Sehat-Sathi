@@ -63,6 +63,16 @@ export default function DoctorCard({ doctor, onBook, compact = false }) {
           <div style={{ fontSize: 11, color: T.textMuted, marginBottom: 4 }}>{qualification}</div>
           {/* Specialization badge */}
           <span style={DS.badge("blue")}>{specialization}</span>
+          {doctor.distance_km !== undefined && doctor.distance_km !== null && (
+            <span style={{
+              background: "rgba(16,185,129,0.12)", color: "#059669",
+              border: "1px solid rgba(16,185,129,0.25)",
+              padding: "2px 8px", borderRadius: 100, fontSize: 10.5, fontWeight: 700,
+              marginLeft: 6, display: "inline-flex", alignItems: "center", gap: 3
+            }}>
+              <MapPin size={10} /> {doctor.distance_km} km away
+            </span>
+          )}
         </div>
       </div>
 
@@ -70,7 +80,7 @@ export default function DoctorCard({ doctor, onBook, compact = false }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
         <div style={{ fontSize: 12, color: T.textSecondary, display: "flex", alignItems: "center", gap: 5 }}>
           <MapPin size={11} style={{ color: T.textMuted, flexShrink: 0 }} />
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hospital}</span>
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hospital} {city ? `(${city})` : ""}</span>
         </div>
         <div style={{ fontSize: 12, color: T.textSecondary, display: "flex", alignItems: "center", gap: 5 }}>
           <Clock size={11} style={{ color: T.textMuted }} />

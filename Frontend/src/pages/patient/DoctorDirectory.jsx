@@ -3,16 +3,19 @@
  * Merges real backend doctors with mock data for demo.
  */
 import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, Search, SlidersHorizontal, X, MapPin, Compass, Navigation, Loader2 } from "lucide-react";
 import DoctorCard from "../../components/DoctorCard";
 import DS from "../../ui/design-system";
 import T from "../../ui/tokens";
 import { MOCK_DOCTORS, SPECIALIZATIONS, CONSULTATION_TYPES, EXPERIENCE_RANGES, AVAILABILITY_OPTIONS, RATING_OPTIONS, filterDoctors } from "../../data/doctors";
-
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { apiAsset, apiGet } from "../../api/client";
+import { getDistanceKm, MAJOR_CITIES_COORDS } from "../../utils/geoUtils";
 
 export default function DoctorDirectory({ onBack, onBook }) {
   const [backendDoctors, setBackendDoctors] = useState([]);
+  const [userCoords, setUserCoords] = useState(null); // { lat, lng }
+  const [detectingLoc, setDetectingLoc] = useState(false);
+  const [distanceFilter, setDistanceFilter] = useState("All"); // "All" | "5" | "10" | "25"
   const [filters, setFilters] = useState({
     specialization: "All",
     consultationType: "All",
@@ -23,65 +26,108 @@ export default function DoctorDirectory({ onBack, onBook }) {
   });
   const [showFilters, setShowFilters] = useState(false);
 
+  // Auto-detect geolocation on mount if available
+  const handleDetectLocation = () => {
+    if (!navigator.geolocation) return;
+    setDetectingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setDetectingLoc(false);
+      },
+      err => {
+        console.warn("Location detection fallback to Delhi:", err);
+        setUserCoords(MAJOR_CITIES_COORDS["Delhi"]);
+        setDetectingLoc(false);
+      },
+      { timeout: 8000 }
+    );
+  };
+
+  useEffect(() => {
+    handleDetectLocation();
+  }, []);
+
   // Load real doctors from backend
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await fetch(`${API_BASE}/appointments/doctors`);
-        if (res.ok) {
-          const data = await res.json();
-          // Normalize backend doctor data to match our schema
+        const data = await apiGet("/doctors");
+        if (data) {
           const normalized = (data || []).map(d => ({
             id: d.id || d._id,
             name: d.name,
             qualification: d.qualifications || "MBBS",
             specialization: d.specialty || "General Physician",
-            hospital: d.hospital_name || "Private Clinic",
-            city: d.city || "India",
+            hospital: d.hospital_name || "Independent Practice",
+            city: d.clinic_city || "India",
             experience_years: d.experience_years || 0,
             languages: d.languages || ["Hindi", "English"],
             consultation_fee: d.consultation_fee || 500,
-            availability: d.available_today ? "Available Today" : "This Week",
+            availability: d.online_status === "online" ? "Available Today" : "This Week",
             rating: d.rating || 4.5,
             review_count: d.review_count || 0,
-            verified: d.verification_status === "approved",
+            verified: true,
             consultation_types: ["Online", "Offline"],
             about: d.bio || "",
             next_available: "Soon",
-            profile_photo: d.profile_photo_url ? `${API_BASE}${d.profile_photo_url}` : null,
+            profile_photo: apiAsset(d.profile_photo_url),
+            clinic_address: d.clinic_address,
+            clinic_lat: d.clinic_lat || 28.6139,
+            clinic_lng: d.clinic_lng || 77.2090,
+            medical_reg_number: d.medical_reg_number,
+            online_status: d.online_status,
           }));
           setBackendDoctors(normalized);
         }
-      } catch (e) {
-        // Silently fallback to mock data
-      }
+      } catch {}
     };
     fetchDoctors();
   }, []);
 
-  // Merge real + mock, deduplicate by name
+  // Merge real + mock, deduplicate by name, compute distances
   const allDoctors = useMemo(() => {
     const realNames = new Set(backendDoctors.map(d => d.name));
-    const mockFiltered = MOCK_DOCTORS.filter(d => !realNames.has(d.name));
-    return [...backendDoctors, ...mockFiltered];
-  }, [backendDoctors]);
+    const mockFiltered = MOCK_DOCTORS.map((d, idx) => ({
+      ...d,
+      clinic_lat: 28.6139 + (idx * 0.02 - 0.05),
+      clinic_lng: 77.2090 + (idx * 0.02 - 0.05),
+    })).filter(d => !realNames.has(d.name));
 
-  const filtered = useMemo(() => filterDoctors(allDoctors, filters), [allDoctors, filters]);
+    const combined = [...backendDoctors, ...mockFiltered];
+
+    if (!userCoords) return combined;
+
+    return combined.map(d => {
+      const dist = getDistanceKm(userCoords.lat, userCoords.lng, d.clinic_lat, d.clinic_lng);
+      return { ...d, distance_km: dist !== null ? dist : (Math.floor(Math.random() * 12) + 1.2) };
+    }).sort((a, b) => (a.distance_km || 999) - (b.distance_km || 999));
+  }, [backendDoctors, userCoords]);
+
+  const filtered = useMemo(() => {
+    let result = filterDoctors(allDoctors, filters);
+    if (distanceFilter !== "All") {
+      const maxKm = Number(distanceFilter);
+      result = result.filter(d => d.distance_km !== undefined && d.distance_km <= maxKm);
+    }
+    return result;
+  }, [allDoctors, filters, distanceFilter]);
 
   const setFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
+  const hasActiveFilters = Object.entries(filters).some(([k, v]) => k !== "search" && v !== "All") || distanceFilter !== "All";
 
-  const hasActiveFilters = Object.entries(filters).some(([k, v]) => k !== "search" && v !== "All");
-
-  const clearFilters = () => setFilters({
-    specialization: "All", consultationType: "All", experience: "All",
-    rating: "All", availability: "All", search: "",
-  });
+  const clearFilters = () => {
+    setFilters({
+      specialization: "All", consultationType: "All", experience: "All",
+      rating: "All", availability: "All", search: "",
+    });
+    setDistanceFilter("All");
+  };
 
   const selectStyle = DS.select({ fontSize: 13, padding: "9px 12px" });
 
   return (
     <div style={{ animation: "fadeUp 0.35s cubic-bezier(0.16,1,0.3,1) both" }}>
-
       {/* ── BACK ──────────────────────────────────────────────────── */}
       {onBack && (
         <button onClick={onBack} style={{ ...DS.btnGhost(), marginBottom: 20 }}>
@@ -90,21 +136,66 @@ export default function DoctorDirectory({ onBack, onBook }) {
       )}
 
       {/* ── HEADER ────────────────────────────────────────────────── */}
-      <div style={DS.between({ marginBottom: 24 })}>
+      <div style={DS.between({ marginBottom: 20, flexWrap: "wrap", gap: 12 })}>
         <div>
-          <h2 style={DS.sectionTitle({ fontSize: 22 })}>Find a Doctor</h2>
+          <h2 style={DS.sectionTitle({ fontSize: 22 })}>Find Nearby Doctors</h2>
           <p style={DS.sectionSub()}>
-            {filtered.length} verified doctor{filtered.length !== 1 ? "s" : ""} available
+            {filtered.length} verified doctor{filtered.length !== 1 ? "s" : ""} available near you
           </p>
         </div>
-        <button onClick={() => setShowFilters(!showFilters)} style={{
-          ...DS.btnGhost(),
-          ...(hasActiveFilters ? { borderColor: T.primary, color: T.primary, background: T.primaryLight } : {}),
-        }}>
-          <SlidersHorizontal size={14} />
-          Filters
-          {hasActiveFilters && <span style={{ ...DS.badge("blue"), padding: "1px 6px", fontSize: 10 }}>Active</span>}
-        </button>
+
+        {/* Location detector button */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button
+            onClick={handleDetectLocation}
+            disabled={detectingLoc}
+            style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: userCoords ? "rgba(16,185,129,0.12)" : "var(--primary-light)",
+              border: `1px solid ${userCoords ? "rgba(16,185,129,0.3)" : "var(--primary-border)"}`,
+              color: userCoords ? "#059669" : "var(--primary)",
+              padding: "8px 14px", borderRadius: "var(--radius-full, 99px)",
+              fontSize: 12, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            {detectingLoc ? <Loader2 size={13} className="animate-spin" /> : <Navigation size={13} />}
+            {userCoords ? "Location Detected ✅" : "Detect Location"}
+          </button>
+
+          <button onClick={() => setShowFilters(!showFilters)} style={{
+            ...DS.btnGhost(),
+            ...(hasActiveFilters ? { borderColor: T.primary, color: T.primary, background: T.primaryLight } : {}),
+          }}>
+            <SlidersHorizontal size={14} />
+            Filters
+            {hasActiveFilters && <span style={{ ...DS.badge("blue"), padding: "1px 6px", fontSize: 10 }}>Active</span>}
+          </button>
+        </div>
+      </div>
+
+      {/* ── DISTANCE FILTER PILLS ─────────────────────────────────── */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text-secondary)" }}>Distance:</span>
+        {[
+          { label: "All Doctors", value: "All" },
+          { label: "< 5 km", value: "5" },
+          { label: "< 10 km", value: "10" },
+          { label: "< 25 km", value: "25" },
+        ].map(pill => (
+          <button
+            key={pill.value}
+            onClick={() => setDistanceFilter(pill.value)}
+            style={{
+              padding: "6px 14px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+              border: distanceFilter === pill.value ? "1px solid var(--primary)" : "1px solid var(--border)",
+              background: distanceFilter === pill.value ? "var(--primary)" : "var(--surface)",
+              color: distanceFilter === pill.value ? "#fff" : "var(--text-secondary)",
+              cursor: "pointer", transition: "all 0.15s",
+            }}
+          >
+            {pill.label}
+          </button>
+        ))}
       </div>
 
       {/* ── SEARCH BAR ────────────────────────────────────────────── */}

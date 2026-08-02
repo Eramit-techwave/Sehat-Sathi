@@ -82,6 +82,20 @@ export default function AppointmentsModule({
                       </span>
                     </div>
                     {apt.reason && <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 6 }}>Reason: {apt.reason}</div>}
+                    
+                    {/* Payment Status & Details */}
+                    <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 8, flexWrap: "wrap", fontSize: 11 }}>
+                      <span style={{
+                        background: apt.payment_status === "Paid" ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)",
+                        color: apt.payment_status === "Paid" ? "#059669" : "#D97706",
+                        border: `1px solid ${apt.payment_status === "Paid" ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`,
+                        padding: "2px 8px", borderRadius: 100, fontWeight: 700,
+                      }}>
+                        💳 {apt.payment_status || "Paid"} ({apt.payment_method?.toUpperCase() || "UPI"})
+                      </span>
+                      {apt.amount > 0 && <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Amount: ₹{apt.amount}</span>}
+                      {apt.transaction_id && <span style={{ color: "var(--text-muted)", fontFamily: "monospace" }}>ID: {apt.transaction_id}</span>}
+                    </div>
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>

@@ -3,9 +3,9 @@
  * Shows all verified hospitals with search, filter, location & doctor listing.
  */
 import { useState, useEffect, useMemo } from "react";
-import { Search, MapPin, Phone, Building2, Users, Navigation, X, ChevronDown, ChevronUp, Stethoscope } from "lucide-react";
+import { Search, MapPin, Phone, Building2, Users, Navigation, X, Stethoscope } from "lucide-react";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { apiGet } from "../../api/client";
 
 // ── Demo hospitals to always show content ────────────────────────────
 const DEMO_HOSPITALS = [
@@ -92,15 +92,19 @@ function HospitalDetailPanel({ hospital, onClose, onBookDoctor }) {
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
 
-  useEffect(() => {
-    if (activeTab !== "doctors" || hospital.id?.startsWith("demo")) return;
+  const loadDoctors = () => {
+    if (hospital.id?.startsWith("demo")) return;
     setLoadingDocs(true);
-    fetch(`${API_BASE}/hospitals/${hospital.id}/doctors`)
-      .then(r => r.ok ? r.json() : [])
+    apiGet(`/hospitals/${hospital.id}/doctors`)
       .then(data => setDoctors(data))
       .catch(() => setDoctors([]))
       .finally(() => setLoadingDocs(false));
-  }, [activeTab, hospital.id]);
+  };
+
+  const selectTab = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === "doctors" && doctors.length === 0) loadDoctors();
+  };
 
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     [hospital.name, hospital.address, hospital.city, "India"].filter(Boolean).join(", ")
@@ -149,7 +153,7 @@ function HospitalDetailPanel({ hospital, onClose, onBookDoctor }) {
         {/* Tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", background: "var(--surface)", flexShrink: 0 }}>
           {TABS.map(tab => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            <button key={tab.id} onClick={() => selectTab(tab.id)}
               style={{ padding: "12px 20px", border: "none", background: "none", color: activeTab === tab.id ? "var(--primary)" : "var(--text-muted)", fontSize: 13, fontWeight: activeTab === tab.id ? 700 : 500, cursor: "pointer", borderBottom: activeTab === tab.id ? "2px solid var(--primary)" : "2px solid transparent", transition: "all 0.15s" }}>
               {tab.label}
             </button>
@@ -398,9 +402,8 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
   useEffect(() => {
     const fetchHospitals = async () => {
       try {
-        const res = await fetch(`${API_BASE}/hospitals/`);
-        if (res.ok) {
-          const data = await res.json();
+        const data = await apiGet("/hospitals/");
+        if (data) {
           setBackendHospitals(data.map(h => ({
             id: h.id || h._id,
             name: h.name,
@@ -410,11 +413,13 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
             departments: h.departments || [],
             facilities: h.facilities || [],
             emergency_available: h.emergency_available || false,
-            total_doctors: h.total_doctors || 0,
+            total_doctors: h.doctor_count || 0,
             rating: h.rating || 4.2,
+            emergency_phone: h.emergency_phone || "",
+            opening_hours: h.opening_hours || "",
           })));
         }
-      } catch (e) { /* silently fallback to demo */ }
+      } catch { /* silently fallback to demo */ }
       finally { setLoading(false); }
     };
     fetchHospitals();

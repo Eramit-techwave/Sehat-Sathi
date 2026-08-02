@@ -10,7 +10,9 @@ import { useState, useEffect } from "react";
 import { Activity, LogOut, Menu, X, Bell, Sun, Moon, Monitor, ChevronRight, User } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useLanguage } from "../context/LanguageContext";
 import NotificationBell from "./NotificationBell";
+import LanguageSelector from "./LanguageSelector";
 
 // ── Role badge colors ────────────────────────────────────────────────
 const ROLE_COLORS = {
@@ -74,6 +76,7 @@ export default function DashboardLayout({
   topbarRight,             // extra right-side topbar content
 }) {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const roleStyle = ROLE_COLORS[role] || ROLE_COLORS.Patient;
 
@@ -189,7 +192,7 @@ export default function DashboardLayout({
             style={{ color: "var(--red)" }}
           >
             <LogOut size={15} style={{ flexShrink: 0 }} />
-            Sign Out
+            {t("dash_sign_out")}
           </button>
         </div>
       </aside>
@@ -231,6 +234,7 @@ export default function DashboardLayout({
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             {topbarRight}
             <NotificationBell />
+            <LanguageSelector compact={false} />
             <TopbarThemeToggle />
           </div>
         </header>

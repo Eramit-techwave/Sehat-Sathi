@@ -243,8 +243,6 @@ export default function WorkflowTimeline({ user }) {
   const [filter, setFilter] = useState("all");
   const [error, setError] = useState("");
 
-  useEffect(() => { loadTimeline(); }, []);
-
   const loadTimeline = async () => {
     setLoading(true);
     setError("");
@@ -261,6 +259,8 @@ export default function WorkflowTimeline({ user }) {
     }
     setLoading(false);
   };
+
+  useEffect(() => { loadTimeline(); }, []);
 
   const EVENT_TYPES = ["all", "appointment", "report", "prescription", "followup"];
 

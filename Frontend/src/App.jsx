@@ -1,15 +1,25 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState, useCallback } from "react";
 import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import { useTheme } from "./context/ThemeContext.jsx";
-import LandingPage from "./pages/LandingPage.jsx";
-import ResetPassword from "./pages/ResetPassword";
-import Dashboard from "./pages/Dashboard.jsx";
+import { useLanguage } from "./context/LanguageContext.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
+import LanguageSelector from "./components/LanguageSelector.jsx";
+import TermsGate from "./components/TermsGate.jsx";
+import TranslateWidget from "./components/TranslateWidget.jsx";
 import {
   Activity, LogOut, Sun, Moon, Monitor, Menu, X,
-  User as UserIcon, LayoutDashboard
+  LayoutDashboard, FileText
 } from "lucide-react";
+
+const LandingPage = lazy(() => import("./pages/LandingPage.jsx"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const LegalHub = lazy(() => import("./pages/LegalHub.jsx"));
+
+function RouteLoading() {
+  return <div style={{ minHeight: "60vh", display: "grid", placeItems: "center", color: "var(--text-muted)" }}>Loading…</div>;
+}
 
 // ── Theme Toggle Button ──────────────────────────────────────────────────────
 function ThemeToggle() {
@@ -92,12 +102,13 @@ function ThemeToggle() {
 function MobileMenu({ user, logout, onLoginClick, onGetStartedClick, onClose }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useLanguage();
 
   const NAV_LINKS = [
-    { label: "Features",    href: "#features" },
-    { label: "How It Works",href: "#how-it-works" },
-    { label: "Doctors",     href: "#doctors" },
-    { label: "Blood Donor", href: "#blood" },
+    { label: t("nav_features"),     href: "#features" },
+    { label: t("nav_how_it_works"), href: "#how-it-works" },
+    { label: t("nav_doctors"),      href: "#doctors" },
+    { label: t("nav_blood_donor"),  href: "#blood" },
   ];
 
   const handleNavLink = (href) => {
@@ -139,16 +150,16 @@ function MobileMenu({ user, logout, onLoginClick, onGetStartedClick, onClose }) 
               style={{ width: "100%", justifyContent: "center" }}
               onClick={() => { navigate("/dashboard"); onClose(); }}
             >
-              <LayoutDashboard size={14} /> Dashboard
+              <LayoutDashboard size={14} /> {t("nav_dashboard")}
             </button>
             <button className="btn-danger" style={{ width: "100%", justifyContent: "center" }} onClick={() => { logout(); onClose(); }}>
-              <LogOut size={14} /> Sign Out
+              <LogOut size={14} /> {t("nav_sign_out")}
             </button>
           </div>
         ) : (
           <div style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 8 }}>
-            <button className="btn-ghost" style={{ width: "100%", justifyContent: "center" }} onClick={() => { onLoginClick(); onClose(); }}>Sign In</button>
-            <button className="btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => { onGetStartedClick(); onClose(); }}>Get Started Free</button>
+            <button className="btn-ghost" style={{ width: "100%", justifyContent: "center" }} onClick={() => { onLoginClick(); onClose(); }}>{t("nav_sign_in")}</button>
+            <button className="btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={() => { onGetStartedClick(); onClose(); }}>{t("nav_get_started")}</button>
           </div>
         )}
       </nav>
@@ -167,9 +178,10 @@ const ROLE_COLORS = {
 // ── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const { user, logout, loading } = useAuth();
-  const { resolvedTheme } = useTheme();
+  const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [termsGateCallback, setTermsGateCallback] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -184,25 +196,49 @@ export default function App() {
       if (user) navigate("/dashboard");
       else navigate("/");
     }
-  }, [user, loading]);
+  }, [user, loading, navigate]);
 
-  // Close mobile menu on route change
-  useEffect(() => setMobileOpen(false), [location.pathname]);
+  // Intercept login/signup events — show T&C gate first
+  const showTermsGate = useCallback((originalEvent) => {
+    setTermsGateCallback(() => () => {
+      window.dispatchEvent(new Event(originalEvent));
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleLoginTrigger = () => showTermsGate("__direct-login-modal");
+    const handleSignupTrigger = () => showTermsGate("__direct-signup-modal");
+    const handleDirectLogin = () => window.dispatchEvent(new CustomEvent("trigger-login-modal-direct"));
+    const handleDirectSignup = () => window.dispatchEvent(new CustomEvent("trigger-signup-modal-direct"));
+
+    window.addEventListener("trigger-login-modal", handleLoginTrigger);
+    window.addEventListener("trigger-signup-modal", handleSignupTrigger);
+    window.addEventListener("__direct-login-modal", handleDirectLogin);
+    window.addEventListener("__direct-signup-modal", handleDirectSignup);
+    return () => {
+      window.removeEventListener("trigger-login-modal", handleLoginTrigger);
+      window.removeEventListener("trigger-signup-modal", handleSignupTrigger);
+      window.removeEventListener("__direct-login-modal", handleDirectLogin);
+      window.removeEventListener("__direct-signup-modal", handleDirectSignup);
+    };
+  }, [showTermsGate]);
 
   const NAV_LINKS = [
-    { label: "Features",    href: "#features" },
-    { label: "How It Works",href: "#how-it-works" },
-    { label: "Doctors",     href: "#doctors" },
-    { label: "Blood Donor", href: "#blood" },
-    { label: "About Us",    href: "#about" },
+    { label: t("nav_features"),     href: "#features" },
+    { label: t("nav_how_it_works"), href: "#how-it-works" },
+    { label: t("nav_doctors"),      href: "#doctors" },
+    { label: t("nav_blood_donor"),  href: "#blood" },
+    { label: t("nav_about"),        href: "#about" },
+    { label: "Legal",               href: "/legal", isRoute: true },
   ];
 
-  const handleNavLink = (href) => {
+  const handleNavLink = (link) => {
+    if (link.isRoute) { navigate(link.href); return; }
     if (location.pathname !== "/") {
       navigate("/");
-      setTimeout(() => document.querySelector(href)?.scrollIntoView({ behavior: "smooth" }), 150);
+      setTimeout(() => document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" }), 150);
     } else {
-      document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
+      document.querySelector(link.href)?.scrollIntoView({ behavior: "smooth" });
     }
   };
 
@@ -255,26 +291,26 @@ export default function App() {
             </span>
           </div>
 
-          {/* Center Nav Links (desktop, landing only) */}
-          {!user && location.pathname === "/" && (
+          {/* Center Nav Links (desktop) */}
+          {!user && (
             <nav className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 2 }}>
               {NAV_LINKS.map(link => (
                 <button
                   key={link.href}
-                  onClick={() => handleNavLink(link.href)}
+                  onClick={() => handleNavLink(link)}
                   style={{
-                    background: "none",
+                    background: location.pathname === link.href ? "var(--primary-light)" : "none",
                     border: "none",
                     padding: "8px 14px",
                     fontSize: 14,
-                    fontWeight: 500,
-                    color: "var(--text-secondary)",
+                    fontWeight: location.pathname === link.href ? 700 : 500,
+                    color: location.pathname === link.href ? "var(--primary)" : "var(--text-secondary)",
                     cursor: "pointer",
                     borderRadius: "var(--radius-md)",
                     transition: "all 0.15s",
                   }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--surface-alt)"; e.currentTarget.style.color = "var(--text)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = location.pathname === link.href ? "var(--primary-light)" : "none"; e.currentTarget.style.color = location.pathname === link.href ? "var(--primary)" : "var(--text-secondary)"; }}
                 >
                   {link.label}
                 </button>
@@ -284,6 +320,7 @@ export default function App() {
 
           {/* Right side */}
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <LanguageSelector />
             <ThemeToggle />
 
             {user ? (
@@ -298,7 +335,7 @@ export default function App() {
                   {user.role?.toUpperCase()}
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-secondary)" }}>
-                  Hi, {user.name?.split(" ")[0]}
+                  {t("nav_hi")}, {user.name?.split(" ")[0]}
                 </span>
                 <NotificationBell />
                 <button
@@ -306,16 +343,16 @@ export default function App() {
                   style={{ padding: "8px 14px", fontSize: 12 }}
                   onClick={logout}
                 >
-                  <LogOut size={13} /> Sign Out
+                  <LogOut size={13} /> {t("nav_sign_out")}
                 </button>
               </div>
             ) : location.pathname === "/" && (
               <div className="hide-mobile" style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <button className="btn-ghost" onClick={() => window.dispatchEvent(new Event("trigger-login-modal"))}>
-                  Sign In
+                  {t("nav_sign_in")}
                 </button>
                 <button className="btn-primary" style={{ padding: "10px 20px", fontSize: 13 }} onClick={() => window.dispatchEvent(new Event("trigger-signup-modal"))}>
-                  Get Started
+                  {t("nav_get_started")}
                 </button>
               </div>
             )}
@@ -344,12 +381,28 @@ export default function App() {
       )}
 
       {/* ── ROUTES ────────────────────────────────────────────────────── */}
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+      <Suspense fallback={<RouteLoading />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/dashboard" element={user ? <Dashboard /> : <Navigate to="/" />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/legal" element={<LegalHub />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
+
+      {/* ── GLOBAL: Terms Gate ─────────────────────────────────────────── */}
+      {termsGateCallback && (
+        <TermsGate
+          onAccept={() => {
+            termsGateCallback?.();
+            setTermsGateCallback(null);
+          }}
+        />
+      )}
+
+      {/* ── GLOBAL: Screen Translate Widget ───────────────────────────── */}
+      <TranslateWidget />
     </div>
   );
 }

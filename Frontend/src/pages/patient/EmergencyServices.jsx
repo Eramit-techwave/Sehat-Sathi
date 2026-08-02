@@ -4,9 +4,9 @@
  * blood donor quick-search, nearby emergency hospitals.
  */
 import { useState, useEffect } from "react";
-import { Phone, MapPin, Droplet, AlertTriangle, Search, Shield, Truck, Heart, Zap, Activity } from "lucide-react";
+import { Phone, MapPin, Droplet, AlertTriangle, Search, Shield } from "lucide-react";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE, apiGet } from "../../api/client";
 
 const EMERGENCY_NUMBERS = [
   { service: "National Emergency", number: "112", icon: "🚨", color: "#EF4444", description: "Police · Fire · Ambulance" },
@@ -30,7 +30,7 @@ const EMERGENCY_CATEGORIES = [
 
 const BLOOD_GROUPS = ["All", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
-export default function EmergencyServices({ onBack, user }) {
+export default function EmergencyServices({ onBack }) {
   const [nearbyHospitals, setNearbyHospitals] = useState([]);
   const [donors, setDonors] = useState([]);
   const [bgFilter, setBgFilter] = useState("All");
@@ -41,8 +41,7 @@ export default function EmergencyServices({ onBack, user }) {
   const token = localStorage.getItem("sehat_sathi_token");
 
   useEffect(() => {
-    fetch(`${API_BASE}/hospitals/`)
-      .then(r => r.ok ? r.json() : [])
+    apiGet("/hospitals/")
       .then(data => setNearbyHospitals(
         data.filter(h => h.emergency_available).slice(0, 6).map(h => ({
           id: h.id || h._id,

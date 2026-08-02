@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
 from app.database import get_db
 from app.auth_utils import verify_token
-from app.schemas import AppointmentCreate, AppointmentReschedule
+from app.schemas import AppointmentCreate, AppointmentReschedule, AppointmentStatusUpdate
 import pymongo
 from datetime import datetime
 
@@ -24,10 +24,12 @@ async def _notify(db, user_id: str, notif_type: str, title: str, message: str, m
     except Exception:
         pass  # Notifications must never break core appointment flow
 
-ALL_SLOTS = [
-    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
-    "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",
-    "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM"
+
+DEFAULT_TIME_SLOTS = [
+    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
+    "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM",
+    "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
+    "05:00 PM", "05:30 PM"
 ]
 
 @router.post("/book")
@@ -54,14 +56,23 @@ async def book_appointment(appointment: AppointmentCreate, current_user: dict = 
     if existing:
         raise HTTPException(status_code=400, detail="This time slot is already booked. Please choose another slot.")
 
+    # Process payment status
+    payment_method = appointment.payment_method or "cash"
+    payment_status = appointment.payment_status or ("Paid" if payment_method in ["upi", "card", "netbanking"] else "Cash at Clinic")
+    txn_id = appointment.transaction_id or f"TXN-{int(datetime.now().timestamp() * 1000)}"
+
     new_apt = {
         "patient_id": user_id,
         "doctor_id": appointment.doctor_id,
         "hospital_id": appointment.hospital_id,
         "date": appointment.date,
         "time_slot": appointment.time_slot,
-        "status": "Pending",
+        "status": "Confirmed" if payment_status == "Paid" else "Pending",
         "reason": appointment.reason,
+        "payment_method": payment_method,
+        "payment_status": payment_status,
+        "amount": appointment.amount or 0.0,
+        "transaction_id": txn_id,
         "created_at": datetime.now()
     }
 
@@ -77,18 +88,24 @@ async def book_appointment(appointment: AppointmentCreate, current_user: dict = 
 
         # Notify patient
         await _notify(db, user_id, "appointment_booked",
-            "Appointment Booked ✅",
-            f"Your appointment with Dr. {doctor_name} on {appointment.date} at {appointment.time_slot} is confirmed.",
-            {"appointment_id": apt_id, "date": appointment.date, "time_slot": appointment.time_slot}
+            "Appointment Booked Successfully 🎉",
+            f"Your appointment with Dr. {doctor_name} on {appointment.date} at {appointment.time_slot} is booked ({payment_status}).",
+            {"appointment_id": apt_id, "date": appointment.date, "time_slot": appointment.time_slot, "transaction_id": txn_id}
         )
         # Notify doctor
         await _notify(db, appointment.doctor_id, "appointment_booked",
-            "New Appointment Request 📅",
-            f"{patient_name} has booked an appointment with you on {appointment.date} at {appointment.time_slot}.",
+            "New Appointment Booking 📅",
+            f"{patient_name} booked an appointment for {appointment.date} at {appointment.time_slot} ({payment_status}).",
             {"appointment_id": apt_id, "date": appointment.date, "patient_id": user_id}
         )
 
-        return {"success": True, "message": "Appointment booked successfully", "appointment_id": apt_id}
+        return {
+            "success": True, 
+            "message": "Appointment booked successfully", 
+            "appointment_id": apt_id,
+            "transaction_id": txn_id,
+            "payment_status": payment_status
+        }
     except pymongo.errors.DuplicateKeyError:
         raise HTTPException(status_code=400, detail="This time slot was just taken. Please choose another slot.")
 
@@ -354,40 +371,80 @@ async def list_doctors():
 
 
 @router.put("/{appointment_id}/status")
-async def update_appointment_status(appointment_id: str, status: str, current_user: dict = Depends(verify_token)):
+async def update_appointment_status(
+    appointment_id: str,
+    status: Optional[str] = None,
+    payload: Optional[AppointmentStatusUpdate] = None,
+    current_user: dict = Depends(verify_token)
+):
     db = get_db()
     role = current_user.get("role")
-    if role not in ["Doctor", "Hospital", "Admin"]:
+    if role not in ["Doctor", "Hospital", "Admin", "Patient"]:
         raise HTTPException(status_code=403, detail="Unauthorized to change appointment status")
 
-    allowed_statuses = ["Pending", "Confirmed", "Cancelled", "Completed"]
-    if status not in allowed_statuses:
+    target_status = (payload.status if payload else status) or "Pending"
+    allowed_statuses = ["Pending", "Confirmed", "Rescheduled", "Cancelled", "Completed"]
+    if target_status not in allowed_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Allowed: {', '.join(allowed_statuses)}")
 
-    # Fetch appointment to notify patient
     try:
         apt = await db["appointments"].find_one({"_id": ObjectId(appointment_id)})
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid appointment ID")
 
-    result = await db["appointments"].update_one(
-        {"_id": ObjectId(appointment_id)},
-        {"$set": {"status": status, "status_updated_at": datetime.now()}}
-    )
-    if result.matched_count == 0:
+    if not apt:
         raise HTTPException(status_code=404, detail="Appointment not found")
 
-    # Notify patient about status change
-    if apt:
-        status_messages = {
-            "Confirmed": ("Appointment Confirmed ✅", f"Your appointment on {apt.get('date')} at {apt.get('time_slot')} has been confirmed."),
-            "Cancelled": ("Appointment Cancelled ❌", f"Your appointment on {apt.get('date')} at {apt.get('time_slot')} has been cancelled."),
-            "Completed": ("Appointment Completed 🎉", f"Your appointment on {apt.get('date')} has been marked as completed. We hope you had a great experience!"),
-        }
-        if status in status_messages:
-            title, msg = status_messages[status]
-            await _notify(db, apt["patient_id"], f"appointment_{status.lower()}", title, msg,
-                {"appointment_id": appointment_id, "date": apt.get("date"), "new_status": status}
-            )
+    update_doc = {
+        "status": target_status,
+        "status_updated_at": datetime.now()
+    }
+    if payload and payload.new_date:
+        update_doc["date"] = payload.new_date
+    if payload and payload.new_time_slot:
+        update_doc["time_slot"] = payload.new_time_slot
+    if payload and payload.doctor_note:
+        update_doc["doctor_note"] = payload.doctor_note
 
-    return {"success": True, "message": f"Appointment status updated to {status}"}
+    await db["appointments"].update_one(
+        {"_id": ObjectId(appointment_id)},
+        {"$set": update_doc}
+    )
+
+    doc = await db["users"].find_one({"_id": ObjectId(apt["doctor_id"])})
+    doctor_name = doc.get("name", "Doctor") if doc else "Doctor"
+    assigned_date = update_doc.get("date", apt.get("date"))
+    assigned_slot = update_doc.get("time_slot", apt.get("time_slot"))
+
+    if target_status == "Confirmed":
+        await _notify(db, apt["patient_id"], "appointment_confirmed",
+            "Appointment Confirmed ⏰",
+            f"Dr. {doctor_name} confirmed your appointment for {assigned_date} at {assigned_slot}.",
+            {"appointment_id": appointment_id, "date": assigned_date, "time_slot": assigned_slot}
+        )
+    elif target_status in ["Rescheduled", "Reschedule"]:
+        await _notify(db, apt["patient_id"], "appointment_rescheduled",
+            "Time Slot Updated 📅",
+            f"Dr. {doctor_name} updated your appointment slot to {assigned_date} at {assigned_slot}.",
+            {"appointment_id": appointment_id, "date": assigned_date, "time_slot": assigned_slot}
+        )
+    elif target_status == "Cancelled":
+        await _notify(db, apt["patient_id"], "appointment_cancelled",
+            "Appointment Cancelled ❌",
+            f"Your appointment with Dr. {doctor_name} on {assigned_date} at {assigned_slot} was cancelled.",
+            {"appointment_id": appointment_id, "date": assigned_date}
+        )
+    elif target_status == "Completed":
+        await _notify(db, apt["patient_id"], "appointment_completed",
+            "Consultation Completed 🎉",
+            f"Your consultation with Dr. {doctor_name} has been completed.",
+            {"appointment_id": appointment_id}
+        )
+
+    return {
+        "success": True,
+        "message": f"Appointment status updated to {target_status}",
+        "appointment_id": appointment_id,
+        "date": assigned_date,
+        "time_slot": assigned_slot
+    }

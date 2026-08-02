@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Shield, CheckCircle2, RefreshCw, Zap, Heart, Award, Upload, FileText,
   Loader2, AlertCircle, Bot, Send, Activity, ArrowUpRight, ArrowDownRight,
@@ -25,6 +26,7 @@ import HospitalDirectory from "./patient/HospitalDirectory";
 import EmergencyServices from "./patient/EmergencyServices";
 import DoctorProfileModal from "./patient/DoctorProfileModal";
 import AppointmentsModule from "./patient/AppointmentsModule";
+import AppointmentPaymentModal from "../components/AppointmentPaymentModal";
 
 const API_BASE = "https://sehat-sathi-ce58.onrender.com";
 
@@ -63,8 +65,26 @@ const SIDEBAR_NAV = [
 export default function PatientDashboard() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t } = useLanguage();
   const token = localStorage.getItem("sehat_sathi_token");
   const authHeaders = { "Authorization": `Bearer ${token}` };
+
+  // ── Translated nav (computed inside component so t() is reactive) ────────
+  const SIDEBAR_NAV = [
+    { id: "home",          label: t("pat_nav_home"),          icon: <LayoutDashboard size={16} /> },
+    { id: "doctordir",     label: t("pat_nav_find_doctors"),  icon: <Stethoscope size={16} />,    group: t("pat_group_care") },
+    { id: "hospitaldir",   label: t("pat_nav_hospitals"),     icon: <Building2 size={16} />,      group: t("pat_group_care") },
+    { id: "appointments",  label: t("pat_nav_appointments"),  icon: <Calendar size={16} />,       group: t("pat_group_care") },
+    { id: "emergency",     label: t("pat_nav_emergency"),     icon: <AlertTriangle size={16} />,  group: t("pat_group_care") },
+    { id: "reports",       label: t("pat_nav_reports"),       icon: <FileText size={16} />,       group: t("pat_group_health") },
+    { id: "symptom",       label: t("pat_nav_ai_assistant"),  icon: <FlaskConical size={16} />,   group: t("pat_group_health") },
+    { id: "timeline",      label: t("pat_nav_health_records"),icon: <Clock size={16} />,           group: t("pat_group_health") },
+    { id: "blood",         label: t("pat_nav_blood_network"), icon: <Droplet size={16} />,         group: t("pat_group_emergency") },
+    { id: "followups",     label: t("pat_nav_followups"),     icon: <Shield size={16} />,          group: t("pat_group_more") },
+    { id: "prescriptions", label: t("pat_nav_prescriptions"), icon: <Activity size={16} />,       group: t("pat_group_more") },
+    { id: "profile",       label: t("pat_nav_profile"),       icon: <User size={16} />,            group: t("pat_group_account") },
+    { id: "settings",      label: t("pat_nav_settings"),      icon: <Activity size={16} />,        group: t("pat_group_account") },
+  ];
 
   // ── VIEW STATE ──────────────────────────────────────────────────────────
   const [activeModule, setActiveModule] = useState(null);
@@ -100,6 +120,13 @@ export default function PatientDashboard() {
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [rescheduleForm, setRescheduleForm] = useState({ new_date: "", new_time_slot: "" });
 
+  // ── BOOKING MODAL ────────────────────────────────────────────────────────
+  const [bookingDoctor, setBookingDoctor] = useState(null);
+  const [bookingForm, setBookingForm] = useState({ date: "", time_slot: "", reason: "" });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingSlots, setBookingSlots] = useState([]);
+  const [bookingSlotsLoading, setBookingSlotsLoading] = useState(false);
+
   // ── BLOOD DONORS ────────────────────────────────────────────────────────
   const [donors, setDonors] = useState([]);
   const [donorsLoading, setDonorsLoading] = useState(false);
@@ -113,13 +140,7 @@ export default function PatientDashboard() {
 
   // ── EFFECTS ─────────────────────────────────────────────────────────────
 
-  useEffect(() => { loadReports(); loadAppointments(); }, []);
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
-  useEffect(() => {
-    if (activeModule === "appointments") loadAppointments();
-    if (activeModule === "blood" && donors.length === 0) loadDonors();
-    if (activeModule === "timeline" && appointments.length === 0) loadAppointments();
-  }, [activeModule]);
+
 
   // ── NOTIFICATION HELPER ─────────────────────────────────────────────────
 
@@ -168,6 +189,63 @@ export default function PatientDashboard() {
     finally { setAptsLoading(false); }
   };
 
+  const fetchAvailableSlots = async (doctorId, date) => {
+    if (!doctorId || !date) return;
+    setBookingSlotsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/appointments/doctor/${doctorId}/slots?date=${date}`, { headers: authHeaders });
+      if (res.ok) {
+        const data = await res.json();
+        setBookingSlots(data.available_slots || []);
+      }
+    } catch (e) { console.error("Slots fetch error", e); setBookingSlots([]); }
+    finally { setBookingSlotsLoading(false); }
+  };
+
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  const handleOpenBooking = (doctor) => {
+    setBookingDoctor(doctor);
+    setBookingForm({ date: "", time_slot: "", reason: "" });
+    setBookingSlots([]);
+  };
+
+  const handleSubmitBooking = async (e) => {
+    e.preventDefault();
+    if (!bookingForm.date || !bookingForm.time_slot) {
+      showNotif("Please select a date and time slot.", "error"); return;
+    }
+    setShowPaymentModal(true);
+  };
+
+  const handleFinalBookingConfirm = async (paymentData) => {
+    setBookingLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/appointments/book`, {
+        method: "POST",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          doctor_id: bookingDoctor.id,
+          hospital_id: bookingDoctor.hospital_id || null,
+          date: bookingForm.date,
+          time_slot: bookingForm.time_slot,
+          reason: bookingForm.reason || "General consultation",
+          payment_method: paymentData.payment_method,
+          payment_status: paymentData.payment_status,
+          amount: paymentData.amount,
+          transaction_id: paymentData.transaction_id,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Booking failed");
+      showNotif(`✅ Appointment booked with Dr. ${bookingDoctor.name} on ${bookingForm.date} at ${bookingForm.time_slot}! (${paymentData.payment_status})`);
+      setShowPaymentModal(false);
+      setBookingDoctor(null);
+      loadAppointments();
+    } catch (e) { showNotif(e.message, "error"); }
+    setBookingLoading(false);
+  };
+
   const loadDonors = async () => {
     setDonorsLoading(true);
     try {
@@ -176,6 +254,14 @@ export default function PatientDashboard() {
     } catch (e) { console.error("Load donors error", e); }
     finally { setDonorsLoading(false); }
   };
+
+  useEffect(() => { loadReports(); loadAppointments(); }, []);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatHistory]);
+  useEffect(() => {
+    if (activeModule === "appointments") loadAppointments();
+    if (activeModule === "blood" && donors.length === 0) loadDonors();
+    if (activeModule === "timeline" && appointments.length === 0) loadAppointments();
+  }, [activeModule]);
 
   // ── FILE UPLOAD ─────────────────────────────────────────────────────────
 
@@ -848,7 +934,7 @@ export default function PatientDashboard() {
         {activeModule === "doctordir" && (
           <DoctorDirectory
             onBack={() => setActiveModule(null)}
-            onBook={(doc) => { setActiveModule(null); }}
+            onBook={(doc) => { handleOpenBooking(doc); }}
           />
         )}
 
@@ -864,7 +950,6 @@ export default function PatientDashboard() {
         {activeModule === "emergency" && (
           <EmergencyServices
             onBack={() => setActiveModule(null)}
-            user={user}
           />
         )}
 
@@ -967,6 +1052,137 @@ export default function PatientDashboard() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* ── BOOKING MODAL ────────────────────────────────────────── */}
+        {bookingDoctor && (
+          <div className="modal-overlay" onClick={() => setBookingDoctor(null)} style={{ zIndex: 99999 }}>
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: 500, background: "var(--surface)",
+                border: "1px solid var(--primary-border)", borderRadius: 20,
+                boxShadow: "0 24px 80px rgba(0,0,0,0.22)", overflow: "hidden",
+                animation: "fadeScale 0.22s cubic-bezier(0.16,1,0.3,1) both",
+                maxHeight: "90vh", display: "flex", flexDirection: "column",
+              }}
+            >
+              {/* Header */}
+              <div style={{
+                background: "linear-gradient(135deg, #1E3A5F, #2563EB)",
+                padding: "20px 24px", flexShrink: 0, position: "relative",
+              }}>
+                <button onClick={() => setBookingDoctor(null)}
+                  style={{ position: "absolute", top: 14, right: 14, background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", borderRadius: 8, width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}
+                >✕</button>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: "2px solid rgba(255,255,255,0.3)", flexShrink: 0 }}>
+                    {bookingDoctor.profile_photo ? <img src={bookingDoctor.profile_photo} alt="dr" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 12 }} /> : "👨‍⚕️"}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>Book Appointment</div>
+                    <div style={{ fontSize: 13, color: "rgba(255,255,255,0.8)" }}>Dr. {bookingDoctor.name}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }}>{bookingDoctor.specialization} · {bookingDoctor.hospital}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div style={{ overflowY: "auto", flex: 1 }}>
+                <form onSubmit={handleSubmitBooking} style={{ padding: 24, display: "flex", flexDirection: "column", gap: 18 }}>
+                  {/* Consultation Fee Note */}
+                  {bookingDoctor.consultation_fee && (
+                    <div style={{ background: "var(--green-light)", border: "1px solid var(--green-border)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--green)", fontWeight: 600 }}>
+                      💰 Consultation Fee: ₹{bookingDoctor.consultation_fee}
+                    </div>
+                  )}
+
+                  {/* Date Picker */}
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Select Date</label>
+                    <input
+                      type="date" required
+                      value={bookingForm.date}
+                      min={new Date().toISOString().split("T")[0]}
+                      onChange={e => {
+                        const newDate = e.target.value;
+                        setBookingForm(prev => ({ ...prev, date: newDate, time_slot: "" }));
+                        fetchAvailableSlots(bookingDoctor.id, newDate);
+                      }}
+                      style={{ width: "100%", background: "var(--surface-alt)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", padding: "11px 14px", color: "var(--text)", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                    />
+                  </div>
+
+                  {/* Time Slots */}
+                  {bookingForm.date && (
+                    <div>
+                      <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Available Time Slots</label>
+                      {bookingSlotsLoading ? (
+                        <div style={{ textAlign: "center", padding: 16 }}>
+                          <Loader2 size={20} className="animate-spin" style={{ color: "var(--primary)", margin: "auto", display: "block" }} />
+                          <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6 }}>Loading slots...</p>
+                        </div>
+                      ) : bookingSlots.length === 0 ? (
+                        <div style={{ background: "var(--red-light)", border: "1px solid var(--red-border)", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "var(--red)", textAlign: "center" }}>
+                          ⚠️ No slots available for this date. Please choose another date.
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                          {bookingSlots.map(slot => (
+                            <button
+                              key={slot} type="button"
+                              onClick={() => setBookingForm(prev => ({ ...prev, time_slot: slot }))}
+                              style={{
+                                padding: "8px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer",
+                                border: bookingForm.time_slot === slot ? "2px solid var(--primary)" : "1px solid var(--border)",
+                                background: bookingForm.time_slot === slot ? "var(--primary)" : "var(--surface-alt)",
+                                color: bookingForm.time_slot === slot ? "#fff" : "var(--text)",
+                                transition: "all 0.15s", fontFamily: "inherit",
+                              }}
+                            >{slot}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Reason */}
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 700, color: "var(--text-muted)", display: "block", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>Reason for Visit</label>
+                    <textarea
+                      placeholder="Describe your symptoms or reason for visit (optional)..."
+                      value={bookingForm.reason}
+                      onChange={e => setBookingForm(prev => ({ ...prev, reason: e.target.value }))}
+                      rows={3}
+                      style={{ width: "100%", background: "var(--surface-alt)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", padding: "11px 14px", color: "var(--text)", fontSize: 13, outline: "none", fontFamily: "inherit", resize: "vertical", boxSizing: "border-box", lineHeight: 1.6 }}
+                    />
+                  </div>
+
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={bookingLoading || !bookingForm.date || !bookingForm.time_slot}
+                    className="btn-primary"
+                    style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "13px", opacity: (bookingLoading || !bookingForm.date || !bookingForm.time_slot) ? 0.6 : 1 }}
+                  >
+                    {bookingLoading ? <><Loader2 size={14} className="animate-spin" /> Processing...</> : <><Calendar size={14} /> Proceed to Payment Checkout</>}
+                  </button>
+
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", margin: 0 }}>⚕️ Secure checkout supporting UPI, Cards, Net Banking & Pay at Clinic.</p>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── APPOINTMENT PAYMENT CHECKOUT MODAL ────────────────── */}
+        {showPaymentModal && bookingDoctor && (
+          <AppointmentPaymentModal
+            doctor={bookingDoctor}
+            appointmentData={bookingForm}
+            onClose={() => setShowPaymentModal(false)}
+            onConfirmBooking={handleFinalBookingConfirm}
+          />
         )}
 
         {/* ── DONOR CONTACT MODAL ─────────────────────────────────── */}

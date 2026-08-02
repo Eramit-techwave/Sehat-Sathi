@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import {
   CheckCircle2, Clock, Users, Calendar, Loader2, LogOut,
   Edit2, Save, X, Activity, AlertCircle, Building2, Stethoscope,
@@ -29,6 +30,7 @@ const PRACTICE_TYPE_LABELS = {
 
 export default function DoctorDashboard() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const token = localStorage.getItem("sehat_sathi_token");
   const authHeaders = { "Authorization": `Bearer ${token}` };
 
@@ -41,6 +43,41 @@ export default function DoctorDashboard() {
   // ── APPOINTMENTS ───────────────────────────────────────────────
   const [appointments, setAppointments] = useState([]);
   const [aptsLoading, setAptsLoading] = useState(false);
+  const [slotModalApt, setSlotModalApt] = useState(null);
+  const [slotForm, setSlotForm] = useState({ date: "", time_slot: "", doctor_note: "" });
+  const [savingSlot, setSavingSlot] = useState(false);
+
+  const handleOpenSlotModal = (apt) => {
+    setSlotModalApt(apt);
+    setSlotForm({
+      date: apt.date || "",
+      time_slot: apt.time_slot || "09:00 AM",
+      doctor_note: apt.doctor_note || ""
+    });
+  };
+
+  const handleConfirmSlotSubmit = async () => {
+    if (!slotModalApt) return;
+    setSavingSlot(true);
+    try {
+      const res = await fetch(`${API_BASE}/appointments/${slotModalApt.id}/status`, {
+        method: "PUT",
+        headers: { ...authHeaders, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "Confirmed",
+          new_date: slotForm.date,
+          new_time_slot: slotForm.time_slot,
+          doctor_note: slotForm.doctor_note
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Slot update failed");
+      showNotif(`✅ Time slot confirmed! Patient notified for ${slotForm.date} at ${slotForm.time_slot}.`);
+      setSlotModalApt(null);
+      loadAppointments();
+    } catch (e) { showNotif(e.message, "error"); }
+    setSavingSlot(false);
+  };
 
   // ── AVAILABILITY ───────────────────────────────────────────────
   const [availability, setAvailability] = useState({});
@@ -76,9 +113,7 @@ export default function DoctorDashboard() {
     setTimeout(() => setNotification({ show: false, type, text: "" }), 4000);
   };
 
-  useEffect(() => { loadStats(); loadAppointments(); loadAvailability(); loadProfile(); }, []);
-  useEffect(() => { if (activeTab === "patients") loadPatients(); }, [activeTab]);
-  useEffect(() => { if (activeTab === "hospitals") loadHospitals(); }, [activeTab]);
+
 
   const loadStats = async () => {
     try {
@@ -166,6 +201,10 @@ export default function DoctorDashboard() {
       if (res.ok) setAvailableHospitals(await res.json());
     } catch (e) { console.error(e); }
   };
+
+  useEffect(() => { loadStats(); loadAppointments(); loadAvailability(); loadProfile(); }, []);
+  useEffect(() => { if (activeTab === "patients") loadPatients(); }, [activeTab]);
+  useEffect(() => { if (activeTab === "hospitals") loadHospitals(); }, [activeTab]);
 
   const toggleSlot = (day, slot) => {
     const daySlots = availability[day] || [];
@@ -290,15 +329,15 @@ export default function DoctorDashboard() {
 
   // ── DERIVED STATE ──────────────────────────────────────────────
   const TABS = [
-    { id: "overview", label: "Overview", icon: "📊" },
-    { id: "appointments", label: "Appointments", icon: "📅" },
-    { id: "availability", label: "Availability", icon: "🗓️" },
-    { id: "hospitals", label: "My Hospitals", icon: "🏥" },
-    { id: "patients", label: "Patients", icon: "👥" },
-    { id: "profile", label: "Profile", icon: "👨‍⚕️" },
+    { id: "overview",      label: t("doc_nav_overview"),      icon: "📊" },
+    { id: "appointments",  label: t("doc_nav_appointments"),  icon: "📅" },
+    { id: "availability",  label: t("doc_nav_availability"),  icon: "🗓️" },
+    { id: "hospitals",     label: t("doc_nav_hospitals"),     icon: "🏥" },
+    { id: "patients",      label: t("doc_nav_patients"),      icon: "👥" },
+    { id: "profile",       label: t("doc_nav_profile"),       icon: "👨‍⚕️" },
     // ── V2 TABS ──────────────────────────────────────────────────
-    { id: "prescriptions", label: "Prescription Pad", icon: "💊" },
-    { id: "followups", label: "Follow-ups", icon: "🔔" },
+    { id: "prescriptions", label: t("doc_nav_prescriptions"), icon: "💊" },
+    { id: "followups",     label: t("doc_nav_followups"),     icon: "🔔" },
   ];
 
 
@@ -447,29 +486,43 @@ export default function DoctorDashboard() {
             <div className="v2-section" style={{ padding: 0, overflow: "hidden" }}>
               <table className="data-table">
                 <thead>
-                  <tr><th>Patient</th><th>Date</th><th>Time</th><th>Status</th><th>Actions</th></tr>
+                  <tr><th>Patient</th><th>Date</th><th>Time Slot</th><th>Payment</th><th>Status</th><th>Actions</th></tr>
                 </thead>
                 <tbody>
                   {[...appointments].sort((a, b) => new Date(b.date) - new Date(a.date)).map(apt => {
                     const sc = apt.status === "Confirmed" ? "#10B981" : apt.status === "Pending" ? "#F59E0B" : apt.status === "Cancelled" ? "#EF4444" : "#94A3B8";
                     return (
                       <tr key={apt.id}>
-                        <td style={{ fontWeight: 600, color: "#0F172A" }}>{apt.patient_name || "Patient"}</td>
+                        <td style={{ fontWeight: 600, color: "#0F172A" }}>
+                          {apt.patient_name || "Patient"}
+                          {apt.reason && <div style={{ fontSize: 11, color: "#64748B", fontWeight: 400 }}>Reason: {apt.reason}</div>}
+                        </td>
                         <td style={{ color: "#64748B" }}>{apt.date}</td>
-                        <td style={{ color: "#2563EB", fontFamily: "monospace", fontWeight: 600 }}>{apt.time_slot}</td>
+                        <td style={{ color: "#2563EB", fontFamily: "monospace", fontWeight: 700 }}>{apt.time_slot}</td>
+                        <td>
+                          <span style={{
+                            fontSize: 10.5, fontWeight: 700,
+                            padding: "2px 8px", borderRadius: 100,
+                            background: apt.payment_status === "Paid" ? "rgba(16,185,129,0.1)" : "rgba(245,158,11,0.1)",
+                            color: apt.payment_status === "Paid" ? "#059669" : "#D97706",
+                            border: `1px solid ${apt.payment_status === "Paid" ? "rgba(16,185,129,0.3)" : "rgba(245,158,11,0.3)"}`
+                          }}>
+                            💳 {apt.payment_status || "Paid"} ({apt.payment_method?.toUpperCase() || "UPI"})
+                          </span>
+                        </td>
                         <td>
                           <span style={{ color: sc, background: sc + "14", border: `1px solid ${sc}30`, fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>{apt.status}</span>
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <button onClick={() => handleOpenSlotModal(apt)} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)", color: "#2563EB", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>
+                              ⏰ Confirm / Assign Slot
+                            </button>
                             {apt.status === "Pending" && (
-                              <>
-                                <button onClick={() => updateAptStatus(apt.id, "Confirmed")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", color: "#059669", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✓ Confirm</button>
-                                <button onClick={() => updateAptStatus(apt.id, "Cancelled")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✕ Reject</button>
-                              </>
+                              <button onClick={() => updateAptStatus(apt.id, "Cancelled")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✕ Reject</button>
                             )}
                             {apt.status === "Confirmed" && (
-                              <button onClick={() => updateAptStatus(apt.id, "Completed")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)", color: "#7C3AED", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>Complete</button>
+                              <button onClick={() => updateAptStatus(apt.id, "Completed")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)", color: "#7C3AED", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✓ Complete</button>
                             )}
                           </div>
                         </td>
@@ -850,10 +903,79 @@ export default function DoctorDashboard() {
         </div>
       )}
 
-      {/* ── V2: FOLLOW-UP ENGINE ──────────────────────────────────── */}
-      {activeTab === "followups" && (
-        <div className="fade-up">
-          <FollowUpManager user={user} />
+      {/* ── DOCTOR SLOT CONFIRMATION & RESCHEDULE MODAL ────────────────── */}
+      {slotModalApt && (
+        <div className="modal-overlay" onClick={() => setSlotModalApt(null)} style={{ zIndex: 99999 }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: "100%", maxWidth: 460, background: "#FFFFFF",
+              borderRadius: 20, padding: 24, boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+              animation: "fadeScale 0.2s ease"
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div>
+                <h3 style={{ fontSize: 17, fontWeight: 700, color: "#0F172A", margin: 0 }}>Confirm / Assign Slot</h3>
+                <p style={{ fontSize: 12, color: "#64748B", margin: "2px 0 0" }}>Patient: <strong>{slotModalApt.patient_name || "Patient"}</strong></p>
+              </div>
+              <button onClick={() => setSlotModalApt(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#94A3B8" }}><X size={18} /></button>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 20 }}>
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase" }}>Appointment Date</label>
+                <input
+                  type="date"
+                  value={slotForm.date}
+                  onChange={e => setSlotForm({ ...slotForm, date: e.target.value })}
+                  style={{ width: "100%", padding: "10px 12px", borderRadius: 8, border: "1px solid #CBD5E1", fontSize: 13 }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase" }}>Assign Time Slot</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 150, overflowY: "auto", padding: 4 }}>
+                  {ALL_SLOTS.map(slot => (
+                    <button
+                      key={slot}
+                      type="button"
+                      onClick={() => setSlotForm({ ...slotForm, time_slot: slot })}
+                      style={{
+                        padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600,
+                        border: slotForm.time_slot === slot ? "2px solid #2563EB" : "1px solid #E2E8F0",
+                        background: slotForm.time_slot === slot ? "#2563EB" : "#F8FAFC",
+                        color: slotForm.time_slot === slot ? "#FFF" : "#0F172A",
+                        cursor: "pointer"
+                      }}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: "#64748B", display: "block", marginBottom: 6, textTransform: "uppercase" }}>Doctor's Message / Note (Optional)</label>
+                <textarea
+                  placeholder="e.g. Please bring your medical records or arrive 10 mins early..."
+                  value={slotForm.doctor_note}
+                  onChange={e => setSlotForm({ ...slotForm, doctor_note: e.target.value })}
+                  rows={2}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: "1px solid #CBD5E1", fontSize: 12 }}
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmSlotSubmit}
+              disabled={savingSlot}
+              className="btn-primary"
+              style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "12px" }}
+            >
+              {savingSlot ? <Loader2 size={16} className="animate-spin" /> : "Confirm Slot & Send Notification to Patient"}
+            </button>
+          </div>
         </div>
       )}
 

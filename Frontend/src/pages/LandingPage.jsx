@@ -678,8 +678,12 @@ export default function LandingPage() {
   const [selectedRole,     setSelectedRole]     = useState("Patient");
   const [medicalRegNumber, setMedicalRegNumber] = useState("");
   const [signupPending,    setSignupPending]    = useState(false);
-  const [authError,        setAuthError]        = useState("");
-  const [authLoading,      setAuthLoading]      = useState(false);
+  const [authError,          setAuthError]          = useState("");
+  const [authLoading,        setAuthLoading]        = useState(false);
+  const [tcAccepted,         setTcAccepted]         = useState(false);
+  const [registrationSuccess,setRegistrationSuccess]= useState(false);
+  const [registeredName,     setRegisteredName]     = useState("");
+  const [showTcModal,        setShowTcModal]        = useState(false);
 
   // ── Forgot password ─────────────────────────────────────────────────────────
   const [forgotOpen,    setForgotOpen]    = useState(false);
@@ -690,30 +694,44 @@ export default function LandingPage() {
   // ── Health tab ──────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("diabetes");
 
-  // ── Nav trigger events (unchanged) ─────────────────────────────────────────
+  // ── Nav trigger events ───────────────────────────────────────────────────────
+  // trigger-login/signup-modal are intercepted by TermsGate in App.jsx.
+  // After acceptance, TermsGate fires trigger-login/signup-modal-direct here.
   useEffect(() => {
-    const openLogin  = () => { setAuthMode("login");  setAuthOpen(true); setAuthError(""); };
-    const openSignup = () => { setAuthMode("signup"); setAuthOpen(true); setAuthError(""); };
-    window.addEventListener("trigger-login-modal",  openLogin);
-    window.addEventListener("trigger-signup-modal", openSignup);
+    // Post-acceptance direct opens (skip gate)
+    const openLoginDirect  = () => { setAuthMode("login");  setAuthOpen(true); setAuthError(""); };
+    const openSignupDirect = () => { setAuthMode("signup"); setAuthOpen(true); setAuthError(""); };
+    window.addEventListener("trigger-login-modal-direct",  openLoginDirect);
+    window.addEventListener("trigger-signup-modal-direct", openSignupDirect);
     return () => {
-      window.removeEventListener("trigger-login-modal",  openLogin);
-      window.removeEventListener("trigger-signup-modal", openSignup);
+      window.removeEventListener("trigger-login-modal-direct",  openLoginDirect);
+      window.removeEventListener("trigger-signup-modal-direct", openSignupDirect);
     };
   }, []);
 
-  const openAuth  = (mode) => { setAuthMode(mode); setAuthOpen(true); setAuthError(""); };
-  const resetForm = () => { setEmail(""); setPassword(""); setName(""); setMedicalRegNumber(""); setAuthError(""); };
+  // openAuth: fires window event so TermsGate can intercept first
+  const openAuth = (mode) => {
+    window.dispatchEvent(new Event(`trigger-${mode === "login" ? "login" : "signup"}-modal`));
+  };
+  const resetForm = () => { setEmail(""); setPassword(""); setName(""); setMedicalRegNumber(""); setAuthError(""); setTcAccepted(false); };
 
   // ── Auth handlers (unchanged) ───────────────────────────────────────────────
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setAuthLoading(true); setAuthError("");
     if (authMode === "signup") {
+      if (!tcAccepted) { setAuthError("Please accept the Terms & Conditions to continue."); setAuthLoading(false); return; }
       const res = await registerNode(name, email, password, selectedRole, null, medicalRegNumber || undefined);
       if (res.success) {
         if (res.verification_required) { setSignupPending(true); setAuthOpen(false); resetForm(); }
-        else { setAuthMode("login"); setPassword(""); }
+        else {
+          // Patient registered successfully
+          setRegisteredName(name);
+          setRegistrationSuccess(true);
+          setAuthOpen(false);
+          resetForm();
+          setTimeout(() => setRegistrationSuccess(false), 5000);
+        }
       } else { setAuthError(res.error || "Signup failed"); }
     } else {
       const res = await loginNode(email, password);
@@ -967,6 +985,103 @@ export default function LandingPage() {
           HOW IT WORKS — STICKY CARD STACK
       ════════════════════════════════════════════════════════════════ */}
       <HowItWorksSection />
+
+      {/* ════════════════════════════════════════════════════════════════
+          AI ANALYZER SHOWCASE
+      ════════════════════════════════════════════════════════════════ */}
+      <section id="ai-showcase" style={{
+        maxWidth: 1200, margin: "0 auto", padding: "60px 6%",
+      }}>
+        <SectionHead
+          label={<><Bot size={11} /> AI Report Intelligence</>}
+          labelColor="var(--primary)"
+          title={<>Understand Every Report<br /><em style={{ color: "var(--primary)", fontSize: "0.72em" }}>in Seconds, Not Days</em></>}
+          subtitle="Upload any blood test, X-ray, or lab report. Our AI extracts every parameter, explains it in plain language, and tells you what to watch."
+        />
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.65, ease: EASE }}
+          style={{
+            background: "var(--surface)", border: "1px solid var(--primary-border)",
+            borderRadius: 28, overflow: "hidden",
+            boxShadow: "0 20px 60px rgba(37,99,235,0.10)",
+          }}
+        >
+          {/* Demo Header Bar */}
+          <div style={{
+            background: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)",
+            padding: "18px 28px", display: "flex", alignItems: "center", gap: 14,
+          }}>
+            <div style={{ width: 42, height: 42, background: "rgba(255,255,255,0.15)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Bot size={20} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>SehatSathi AI Analyzer</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.65)" }}>Real-time medical report intelligence</div>
+            </div>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+              {["rgba(239,68,68,0.8)", "rgba(245,158,11,0.8)", "rgba(16,185,129,0.8)"].map((c, i) => (
+                <div key={i} style={{ width: 10, height: 10, borderRadius: "50%", background: c }} />
+              ))}
+            </div>
+          </div>
+          {/* Demo Content */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }} className="ai-showcase-grid">
+            {/* Left: Upload Area */}
+            <div style={{ padding: "32px 28px", borderRight: "1px solid var(--border)" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 14 }}>Upload Report</div>
+              <div style={{
+                border: "2px dashed var(--primary-border)", borderRadius: 16,
+                padding: "28px 20px", textAlign: "center",
+                background: "var(--primary-light)", marginBottom: 20,
+              }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>📄</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>Blood_Test_Report.pdf</div>
+                <div style={{ fontSize: 11, color: "var(--green)", fontWeight: 700 }}>✅ Analyzed in 2.1 seconds</div>
+              </div>
+              {[
+                { label: "Hemoglobin", value: "11.2 g/dL", status: "Low", color: "var(--red)" },
+                { label: "Blood Sugar", value: "118 mg/dL", status: "Normal", color: "var(--green)" },
+                { label: "Platelets", value: "320,000", status: "Normal", color: "var(--green)" },
+                { label: "Uric Acid", value: "7.9 mg/dL", status: "High", color: "var(--amber)" },
+              ].map((p, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: "1px solid var(--border)" }}>
+                  <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>{p.label}</span>
+                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "monospace", color: "var(--primary)" }}>{p.value}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: p.color, background: `${p.color}18`, padding: "2px 8px", borderRadius: 4 }}>{p.status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Right: AI Summary */}
+            <div style={{ padding: "32px 28px" }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--purple)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 14 }}>AI Summary</div>
+              <div style={{ background: "var(--surface-alt)", borderRadius: 14, padding: 18, marginBottom: 16, border: "1px solid var(--border)" }}>
+                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                  <strong style={{ color: "var(--text)" }}>⚠️ Attention needed:</strong> Your Hemoglobin is slightly below normal range. This could indicate mild anemia. Your Uric Acid is elevated — reduce red meat intake and increase water consumption.
+                </div>
+              </div>
+              <div style={{ background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: 12, padding: "14px 16px", marginBottom: 20 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", marginBottom: 6 }}>💡 AI RECOMMENDATION</div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.7 }}>Consider consulting a General Physician. Increase iron-rich foods (spinach, lentils). Repeat CBC in 4 weeks.</div>
+              </div>
+              <motion.button
+                className="btn-primary"
+                style={{ width: "100%", justifyContent: "center", fontSize: 14, padding: "13px" }}
+                onClick={() => openAuth("signup")}
+                whileHover={{ scale: 1.02, boxShadow: "0 8px 28px rgba(37,99,235,0.32)" }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <Bot size={14} /> Try AI Analysis Free — Create Account
+              </motion.button>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", textAlign: "center", marginTop: 10 }}>Free forever · No credit card · Results in &lt;3 seconds</p>
+            </div>
+          </div>
+        </motion.div>
+      </section>
 
       {/* ════════════════════════════════════════════════════════════════
           DOCTOR CONSULTATION
@@ -1494,6 +1609,15 @@ export default function LandingPage() {
               <div key={i}>
                 <h4 style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 16 }}>{col.title}</h4>
                 <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10, padding: 0, margin: 0 }}>
+                  {/* Legal Hub special link */}
+                  {col.title === "Legal & Support" && (
+                    <li>
+                      <a href="/legal" style={{ fontSize: 13, color: "var(--primary)", textDecoration: "none", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}
+                        onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
+                        onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+                      >📋 Legal Hub (50 Documents)</a>
+                    </li>
+                  )}
                   {col.links.map((link, j) => (
                     <li key={j}>
                       <a href="#" style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", transition: "color 0.15s" }}
@@ -1505,28 +1629,6 @@ export default function LandingPage() {
                 </ul>
               </div>
             ))}
-          </div>
-
-          {/* Team credit */}
-          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 28, marginBottom: 20 }}>
-            <div style={{ background: "var(--surface-alt)", border: "1px solid var(--border)", borderRadius: 16, padding: "22px 28px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20 }}>
-                <div>
-                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Founder & Lead Engineer</h5>
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.75, margin: 0 }}>
-                    <strong style={{ color: "var(--text)" }}>Amit Dubey</strong> — AI & Full-Stack Engineer<br />
-                    Building technology-driven healthcare solutions to improve patient outcomes across India.
-                  </p>
-                </div>
-                <div>
-                  <h5 style={{ fontSize: 11, fontWeight: 700, color: "var(--primary)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 8 }}>Our Mission</h5>
-                  <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.75, margin: 0 }}>
-                    Empowering every Indian patient to understand their health data with clarity.<br />
-                    <strong style={{ color: "var(--text)" }}>Making healthcare accessible, transparent, and intelligent — for everyone.</strong>
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Bottom bar */}
@@ -1676,6 +1778,26 @@ export default function LandingPage() {
                   </div>
                 )}
 
+                {/* T&C Checkbox (signup only) */}
+                {authMode === "signup" && (
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                    <input
+                      type="checkbox"
+                      id="tc-accept"
+                      checked={tcAccepted}
+                      onChange={e => setTcAccepted(e.target.checked)}
+                      style={{ marginTop: 3, width: 15, height: 15, cursor: "pointer", accentColor: "var(--primary)", flexShrink: 0 }}
+                    />
+                    <label htmlFor="tc-accept" style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6, cursor: "pointer" }}>
+                      I agree to the{" "}
+                      <button type="button" onClick={() => setShowTcModal(true)}
+                        style={{ background: "none", border: "none", color: "var(--primary)", fontWeight: 700, cursor: "pointer", fontSize: 12, padding: 0, fontFamily: "inherit", textDecoration: "underline" }}
+                      >Terms &amp; Conditions</button>
+                      {" "}&amp; consent to sharing health data with SehatSathi for medical reference purposes.
+                    </label>
+                  </div>
+                )}
+
                 <button type="submit" className="btn-primary" disabled={authLoading}
                   style={{ marginTop: 4, width: "100%", fontSize: 14, justifyContent: "center", opacity: authLoading ? 0.7 : 1 }}
                 >
@@ -1807,6 +1929,144 @@ export default function LandingPage() {
               <button className="btn-primary" style={{ width: "100%", fontSize: 13, justifyContent: "center" }} onClick={() => { setSignupPending(false); setAuthMode("login"); setAuthOpen(true); }}>
                 Go to Sign In →
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════════════════════════════════════════════════════════════
+          REGISTRATION SUCCESS TOAST
+      ════════════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {registrationSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 60, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 60, scale: 0.9 }}
+            transition={{ duration: 0.4, ease: EASE }}
+            style={{
+              position: "fixed", bottom: 28, right: 28, zIndex: 99999,
+              background: "linear-gradient(135deg, #0D9488, #10B981)",
+              borderRadius: 16, padding: "20px 24px",
+              boxShadow: "0 20px 60px rgba(16,185,129,0.35)",
+              maxWidth: 360, display: "flex", gap: 14, alignItems: "flex-start",
+            }}
+          >
+            <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0 }}>🎉</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Welcome to SehatSathi!</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", lineHeight: 1.6 }}>
+                Hi <strong>{registeredName}</strong>! Your account is ready. Signing you in...
+              </div>
+            </div>
+            <button onClick={() => setRegistrationSuccess(false)}
+              style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "#fff", borderRadius: 6, padding: "4px 8px", cursor: "pointer", flexShrink: 0, fontSize: 12 }}
+            >✕</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ════════════════════════════════════════════════════════════════
+          TERMS & CONDITIONS MODAL
+      ════════════════════════════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showTcModal && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowTcModal(false)}
+            style={{ zIndex: 100001 }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.93, y: 20 }}
+              transition={{ duration: 0.28, ease: EASE }}
+              onClick={e => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: 560,
+                background: "var(--surface)", border: "1px solid var(--border)",
+                borderRadius: 20, boxShadow: "var(--shadow-lg)",
+                display: "flex", flexDirection: "column", maxHeight: "88vh",
+                overflow: "hidden",
+              }}
+            >
+              {/* Header */}
+              <div style={{ padding: "22px 28px 18px", borderBottom: "1px solid var(--border)", flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <h3 style={{ fontSize: 17, fontWeight: 800, color: "var(--text)", margin: "0 0 4px" }}>📜 Terms &amp; Conditions</h3>
+                  <p style={{ fontSize: 11, color: "var(--text-muted)", margin: 0 }}>SehatSathi Healthcare Platform · Effective Date: January 1, 2025</p>
+                </div>
+                <button onClick={() => setShowTcModal(false)}
+                  style={{ background: "var(--surface-alt)", border: "1px solid var(--border)", borderRadius: 8, width: 30, height: 30, cursor: "pointer", color: "var(--text-secondary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+                >✕</button>
+              </div>
+              {/* Scrollable Body */}
+              <div style={{ overflowY: "auto", flex: 1, padding: "22px 28px" }}>
+                {[
+                  {
+                    title: "1. Data Collection & Sharing",
+                    icon: "🔒",
+                    content: "By creating an account on SehatSathi, you agree that your health information — including uploaded medical reports, consultation records, and appointment history — will be securely stored and may be shared with verified doctors and healthcare professionals on the platform solely for the purpose of providing you with medical consultation and care."
+                  },
+                  {
+                    title: "2. Medical Reference Only",
+                    icon: "⚠️",
+                    content: "SehatSathi is a healthcare technology platform designed to facilitate medical report interpretation and connect patients with doctors. All AI-generated insights and summaries provided by this platform are for informational and reference purposes only. They do NOT constitute medical diagnosis, treatment plans, or professional medical advice."
+                  },
+                  {
+                    title: "3. Doctor & Hospital Information",
+                    icon: "🏥",
+                    content: "Doctor profiles, qualifications, registration numbers, hospital affiliations, and availability information listed on SehatSathi are provided for reference purposes only. While we make reasonable efforts to verify credentials, patients are responsible for independently verifying the credentials of any healthcare provider before engaging in a consultation."
+                  },
+                  {
+                    title: "4. Data Security & Privacy",
+                    icon: "🛡️",
+                    content: "We implement industry-standard security measures to protect your personal and medical data. Your data will not be sold to third parties. It may be used in anonymized, aggregated form to improve our AI models and platform services. You retain the right to request deletion of your data at any time by contacting support."
+                  },
+                  {
+                    title: "5. User Responsibilities",
+                    icon: "👤",
+                    content: "You agree to provide accurate and truthful information when creating your account and uploading medical documents. Misuse of the platform, including uploading false information, impersonating medical professionals, or attempting to access other users' data, is strictly prohibited and may result in immediate account termination."
+                  },
+                  {
+                    title: "6. Limitation of Liability",
+                    icon: "⚖️",
+                    content: "SehatSathi shall not be liable for any medical outcomes, health decisions, or consequences arising from information obtained through this platform. Always consult a qualified and licensed medical professional before making any health-related decisions. In case of emergencies, contact your local emergency services immediately."
+                  },
+                  {
+                    title: "7. Consent to Communication",
+                    icon: "📧",
+                    content: "By registering, you consent to receive appointment reminders, health tips, platform updates, and service notifications via email or in-app notifications. You may unsubscribe from non-essential communications at any time through your account settings."
+                  },
+                ].map((section, i) => (
+                  <div key={i} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: i < 6 ? "1px solid var(--border)" : "none" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <span style={{ fontSize: 18 }}>{section.icon}</span>
+                      <h4 style={{ fontSize: 13, fontWeight: 800, color: "var(--text)", margin: 0 }}>{section.title}</h4>
+                    </div>
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.85, margin: 0 }}>{section.content}</p>
+                  </div>
+                ))}
+
+                {/* Acceptance Highlight */}
+                <div style={{ background: "var(--primary-light)", border: "1px solid var(--primary-border)", borderRadius: 12, padding: "14px 18px", marginBottom: 6 }}>
+                  <p style={{ fontSize: 12, color: "var(--primary)", fontWeight: 600, margin: 0, lineHeight: 1.7 }}>
+                    📌 By clicking “Create Account” you acknowledge that you have read, understood, and agreed to these Terms &amp; Conditions and our Privacy Policy. SehatSathi is a reference tool — always seek professional medical advice for health concerns.
+                  </p>
+                </div>
+              </div>
+              {/* Footer */}
+              <div style={{ padding: "16px 28px", borderTop: "1px solid var(--border)", flexShrink: 0, display: "flex", gap: 10 }}>
+                <button onClick={() => { setTcAccepted(true); setShowTcModal(false); }} className="btn-primary" style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "11px" }}>
+                  ✓ I Accept &amp; Agree
+                </button>
+                <button onClick={() => setShowTcModal(false)} className="btn-ghost" style={{ padding: "11px 18px", fontSize: 13 }}>
+                  Close
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
