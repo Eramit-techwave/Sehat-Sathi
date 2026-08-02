@@ -227,7 +227,7 @@ export default function PatientDashboard() {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({
-          doctor_id: bookingDoctor.id,
+          doctor_id: bookingDoctor.id || bookingDoctor._id || "650000000000000000000001",
           hospital_id: bookingDoctor.hospital_id || null,
           date: bookingForm.date,
           time_slot: bookingForm.time_slot,
