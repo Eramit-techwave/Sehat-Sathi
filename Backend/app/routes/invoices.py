@@ -1,7 +1,7 @@
-/**
- * Backend Invoice Route — Sehat-Sathi
- * Manages invoice generation, storage, and retrieval for appointments & services.
- */
+# /**
+#  * Backend Invoice Route — Sehat-Sathi
+#  * Manages invoice generation, storage, and retrieval for appointments & services.
+#  **/
 from fastapi import APIRouter, HTTPException, Depends
 from bson import ObjectId
 from app.database import get_db
