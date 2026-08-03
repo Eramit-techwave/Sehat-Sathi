@@ -7,6 +7,9 @@ import { useState, useEffect } from "react";
 import { Phone, MapPin, Droplet, AlertTriangle, Search, Shield } from "lucide-react";
 
 import { API_BASE, apiGet } from "../../api/client";
+import EnhancedBloodModal from "../../components/EnhancedBloodModal";
+import HospitalRoomBookingModal from "../../components/HospitalRoomBookingModal";
+import PaymentInvoiceModal from "../../components/PaymentInvoiceModal";
 
 const EMERGENCY_NUMBERS = [
   { service: "National Emergency", number: "112", icon: "🚨", color: "#EF4444", description: "Police · Fire · Ambulance" },
@@ -38,6 +41,9 @@ export default function EmergencyServices({ onBack }) {
   const [searchDonors, setSearchDonors] = useState(false);
   const [donorLoading, setDonorLoading] = useState(false);
   const [sosActive, setSosActive] = useState(false);
+  const [bloodModalMode, setBloodModalMode] = useState(null); // 'register' | 'request' | null
+  const [selectedRoomHospital, setSelectedRoomHospital] = useState(null);
+  const [roomInvoice, setRoomInvoice] = useState(null);
   const token = localStorage.getItem("sehat_sathi_token");
 
   useEffect(() => {
@@ -192,13 +198,40 @@ export default function EmergencyServices({ onBack }) {
 
       {/* ── Blood Donor Quick Search ──────────────────────── */}
       <div className="v2-section" style={{ marginBottom: 28 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Droplet size={18} style={{ color: "#EF4444" }} />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Droplet size={18} style={{ color: "#EF4444" }} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>Emergency Blood Portal</h3>
+              <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>Verified Donors with Health Screening & Emergency Requests</p>
+            </div>
           </div>
-          <div>
-            <h3 style={{ fontSize: 15, fontWeight: 700, color: "var(--text)", margin: 0 }}>Emergency Blood Search</h3>
-            <p style={{ fontSize: 12, color: "var(--text-muted)", margin: 0 }}>Find registered donors by blood group and city</p>
+
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => setBloodModalMode("register")}
+              style={{
+                background: "linear-gradient(135deg, #DC2626, #B91C1C)", color: "#FFF",
+                border: "none", padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                boxShadow: "0 4px 12px rgba(220,38,38,0.25)"
+              }}
+            >
+              🩸 Register as Donor
+            </button>
+            <button
+              onClick={() => setBloodModalMode("request")}
+              style={{
+                background: "linear-gradient(135deg, #7C3AED, #6D28D9)", color: "#FFF",
+                border: "none", padding: "8px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+                cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                boxShadow: "0 4px 12px rgba(124,58,237,0.25)"
+              }}
+            >
+              🆘 Request Blood
+            </button>
           </div>
         </div>
 
@@ -283,6 +316,16 @@ export default function EmergencyServices({ onBack }) {
                       <Phone size={11} /> Call
                     </a>
                   )}
+                  <button
+                    onClick={() => setSelectedRoomHospital(h)}
+                    style={{
+                      background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF",
+                      border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: 4
+                    }}
+                  >
+                    🛏️ Reserve Room
+                  </button>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((h.name || "") + " " + (h.address || "") + " hospital")}`}
                     target="_blank"
@@ -310,6 +353,39 @@ export default function EmergencyServices({ onBack }) {
           ))}
         </ul>
       </div>
+
+      {/* ENHANCED BLOOD DONOR & REQUEST MODAL */}
+      {bloodModalMode && (
+        <EnhancedBloodModal
+          mode={bloodModalMode}
+          onClose={() => setBloodModalMode(null)}
+          onSuccess={(msg) => {
+            setBloodModalMode(null);
+            alert(`✅ ${msg}`);
+            handleDonorSearch();
+          }}
+        />
+      )}
+
+      {/* HOSPITAL ROOM BOOKING MODAL */}
+      {selectedRoomHospital && (
+        <HospitalRoomBookingModal
+          hospital={selectedRoomHospital}
+          onClose={() => setSelectedRoomHospital(null)}
+          onBookingSuccess={(inv) => {
+            setSelectedRoomHospital(null);
+            setRoomInvoice(inv);
+          }}
+        />
+      )}
+
+      {/* PAYMENT INVOICE RECEIPT MODAL */}
+      {roomInvoice && (
+        <PaymentInvoiceModal
+          invoice={roomInvoice}
+          onClose={() => setRoomInvoice(null)}
+        />
+      )}
     </div>
   );
 }

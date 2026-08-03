@@ -28,6 +28,8 @@ import DoctorProfileModal from "./patient/DoctorProfileModal";
 import AppointmentsModule from "./patient/AppointmentsModule";
 import AppointmentPaymentModal from "../components/AppointmentPaymentModal";
 import PaymentInvoiceModal from "../components/PaymentInvoiceModal";
+import EnhancedBloodModal from "../components/EnhancedBloodModal";
+import HospitalRoomBookingModal from "../components/HospitalRoomBookingModal";
 
 const API_BASE = "https://sehat-sathi-ce58.onrender.com";
 
@@ -205,6 +207,7 @@ export default function PatientDashboard() {
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
+  const [bloodModalMode, setBloodModalMode] = useState(null); // 'register' | 'request' | null
 
   const handleOpenBooking = (doctor) => {
     setBookingDoctor(doctor);
@@ -821,8 +824,37 @@ export default function PatientDashboard() {
         {activeModule === "blood" && (
           <div className="fade-up">
             <button onClick={() => setActiveModule(null)} className="back-btn"><ChevronLeft size={14} /> Dashboard</button>
-            <h2 className="serif" style={{ fontSize: 26, color: "var(--text)", margin: "0 0 6px" }}>🩸 Blood Donor Network</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>Register as a donor or find blood donors near you</p>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+              <div>
+                <h2 className="serif" style={{ fontSize: 26, color: "var(--text)", margin: "0 0 4px" }}>🩸 Blood Donor & Emergency Portal</h2>
+                <p style={{ color: "var(--text-muted)", fontSize: 13, margin: 0 }}>Register as a verified donor with complete medical clearance or request emergency blood</p>
+              </div>
+
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  onClick={() => setBloodModalMode("register")}
+                  style={{
+                    background: "linear-gradient(135deg, #DC2626, #B91C1C)", color: "#FFF",
+                    border: "none", padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 800,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                    boxShadow: "0 4px 14px rgba(220,38,38,0.3)"
+                  }}
+                >
+                  🩸 Register as Donor (Health Form)
+                </button>
+                <button
+                  onClick={() => setBloodModalMode("request")}
+                  style={{
+                    background: "linear-gradient(135deg, #7C3AED, #6D28D9)", color: "#FFF",
+                    border: "none", padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 800,
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                    boxShadow: "0 4px 14px rgba(124,58,237,0.3)"
+                  }}
+                >
+                  🆘 Request Blood
+                </button>
+              </div>
+            </div>
 
             <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 140 }}>
@@ -1223,6 +1255,19 @@ export default function PatientDashboard() {
           <PaymentInvoiceModal
             invoice={activeInvoice}
             onClose={() => setActiveInvoice(null)}
+          />
+        )}
+
+        {/* ── ENHANCED BLOOD DONOR & REQUEST MODAL ────────────────── */}
+        {bloodModalMode && (
+          <EnhancedBloodModal
+            mode={bloodModalMode}
+            onClose={() => setBloodModalMode(null)}
+            onSuccess={(msg) => {
+              setBloodModalMode(null);
+              showNotif(`✅ ${msg}`);
+              loadDonors();
+            }}
           />
         )}
 

@@ -23,6 +23,8 @@ import {
 
 import { apiGet } from "../../api/client";
 import { getDistanceKm, MAJOR_CITIES_COORDS } from "../../utils/geoUtils";
+import HospitalRoomBookingModal from "../../components/HospitalRoomBookingModal";
+import PaymentInvoiceModal from "../../components/PaymentInvoiceModal";
 
 // Comprehensive mock data for nearby hospitals
 const NEARBY_HOSPITALS = [
@@ -144,6 +146,8 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
   const [sortBy, setSortBy] = useState("distance"); // "distance" | "rating" | "name"
   const [userCoords, setUserCoords] = useState(null);
   const [detectingLoc, setDetectingLoc] = useState(false);
+  const [bookingRoomHospital, setBookingRoomHospital] = useState(null);
+  const [roomInvoice, setRoomInvoice] = useState(null);
 
   // Auto-detect location on initial load
   useEffect(() => {
@@ -429,7 +433,7 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
             </div>
 
             {/* Insurance Providers Accepted */}
-            <div>
+            <div style={{ marginBottom: 20 }}>
               <h4 style={{ fontSize: 14, fontWeight: 700, color: "#0F172A", marginBottom: 8 }}>Insurances Accepted</h4>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {selectedHospital.insurance_accepted.map((ins, i) => (
@@ -439,8 +443,53 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
                 ))}
               </div>
             </div>
+
+            {/* Room Tariff & Booking CTA */}
+            <div style={{
+              background: "linear-gradient(135deg, #0F172A, #1E3A8A)", color: "#FFF",
+              padding: 16, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "space-between"
+            }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#94A3B8", fontWeight: 700, textTransform: "uppercase" }}>Hospital Room & Bed Availability</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#FFF", marginTop: 2 }}>General Ward to VIP Suites (₹800 - ₹9,500/day)</div>
+              </div>
+              <button
+                onClick={() => {
+                  setBookingRoomHospital(selectedHospital);
+                  setSelectedHospital(null);
+                }}
+                style={{
+                  background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF",
+                  border: "none", padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 800,
+                  cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+                  boxShadow: "0 4px 14px rgba(37,99,235,0.4)"
+                }}
+              >
+                🛏️ Reserve Room & Bed Now
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* HOSPITAL ROOM BOOKING MODAL */}
+      {bookingRoomHospital && (
+        <HospitalRoomBookingModal
+          hospital={bookingRoomHospital}
+          onClose={() => setBookingRoomHospital(null)}
+          onBookingSuccess={(inv) => {
+            setBookingRoomHospital(null);
+            setRoomInvoice(inv);
+          }}
+        />
+      )}
+
+      {/* PAYMENT INVOICE RECEIPT MODAL */}
+      {roomInvoice && (
+        <PaymentInvoiceModal
+          invoice={roomInvoice}
+          onClose={() => setRoomInvoice(null)}
+        />
       )}
 
     </div>

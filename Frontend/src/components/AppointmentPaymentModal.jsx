@@ -13,6 +13,7 @@ import {
   X, CheckCircle2, ShieldCheck, CreditCard, QrCode, Building, Banknote,
   Lock, ArrowRight, Loader2, Calendar, Clock, Stethoscope, MapPin, IndianRupee, AlertCircle
 } from "lucide-react";
+import { API_BASE } from "../api/client";
 
 export default function AppointmentPaymentModal({ doctor, appointmentData, onClose, onConfirmBooking }) {
   const [paymentMethod, setPaymentMethod] = useState("upi"); // "upi" | "card" | "netbanking" | "cash"
@@ -28,38 +29,142 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
 
   const handlePayAndBook = async () => {
     setErrorMsg("");
-
-    if (paymentMethod === "upi" && !upiId.trim() && upiId.length < 3) {
-      // allow default if user chooses QR or leaves default
-      setUpiId("sehatsathi@upi");
-    }
-
-    if (paymentMethod === "card") {
-      if (!cardData.number || cardData.number.replace(/\s/g, "").length < 12) {
-        setErrorMsg("Please enter a valid 16-digit card number.");
-        return;
-      }
-      if (!cardData.expiry || !cardData.cvv) {
-        setErrorMsg("Please enter valid card Expiry and CVV.");
-        return;
-      }
-    }
-
     setIsProcessing(true);
 
-    // Simulate payment processing latency (1.2 seconds for realistic experience)
-    setTimeout(() => {
-      setIsProcessing(false);
-      const isCash = paymentMethod === "cash";
-      const txnId = isCash ? `CASH-${Date.now()}` : `TXN-${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+    const isCash = paymentMethod === "cash";
 
-      onConfirmBooking({
-        payment_method: paymentMethod,
-        payment_status: isCash ? "Cash at Clinic" : "Paid",
-        amount: totalAmount,
-        transaction_id: txnId,
+    if (isCash) {
+      // Cash at Clinic workflow
+      setTimeout(() => {
+        setIsProcessing(false);
+        onConfirmBooking({
+          payment_method: "CASH",
+          payment_status: "Cash at Clinic",
+          amount: totalAmount,
+          transaction_id: `CASH-${Date.now()}`,
+        });
+      }, 800);
+      return;
+    }
+
+    // REAL RAZORPAY PAYMENT INTEGRATION FLOW
+    try {
+      const token = localStorage.getItem("sehat_sathi_token") || localStorage.getItem("token");
+      const userStr = localStorage.getItem("sehat_sathi_user");
+      let userObj = {};
+      try { if (userStr) userObj = JSON.parse(userStr); } catch (e) {}
+
+      if (!token) {
+        throw new Error("You must be logged in as a Patient to book an appointment.");
+      }
+
+      const authHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      };
+
+      // 1. Create Razorpay Order via Backend POST /payments/create-order
+      const orderRes = await fetch(`${API_BASE}/payments/create-order`, {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: "INR",
+          booking_type: "appointment",
+          notes: {
+            doctor_name: doctor?.name,
+            doctor_id: doctor?.id || doctor?._id,
+            date: appointmentData?.date,
+            time_slot: appointmentData?.time_slot
+          }
+        })
       });
-    }, 1200);
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok) throw new Error(orderData.detail || "Could not initialize Razorpay Order");
+
+      // 2. Open Razorpay Checkout JS Popup
+      const keyId = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_TLFligzH93mFjS";
+
+      const options = {
+        key: keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
+        name: "Sehat-Sathi Healthcare",
+        description: `Consultation Fee — Dr. ${doctor?.name || 'Specialist'}`,
+        image: "https://sehat-sathi-bay.vercel.app/favicon.svg",
+        order_id: orderData.order_id,
+        handler: async function (response) {
+          // 3. Cryptographic Signature Verification via Backend POST /payments/verify
+          try {
+            const verifyRes = await fetch(`${API_BASE}/payments/verify`, {
+              method: "POST",
+              headers: authHeaders,
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                booking_type: "appointment",
+                booking_payload: {
+                  doctor_id: doctor?.id || doctor?._id || "650000000000000000000001",
+                  hospital_id: doctor?.hospital_id || null,
+                  date: appointmentData?.date,
+                  time_slot: appointmentData?.time_slot,
+                  reason: appointmentData?.reason || "General health consultation",
+                  amount: totalAmount,
+                  doctor_specialty: doctor?.specialty || doctor?.specialization || "General Physician",
+                  hospital_name: doctor?.hospital_name || doctor?.hospital || "Sehat-Sathi Partnered Clinic"
+                }
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyData.detail || "Payment verification failed.");
+
+            setIsProcessing(false);
+            onConfirmBooking({
+              payment_method: paymentMethod.toUpperCase(),
+              payment_status: "Paid",
+              amount: totalAmount,
+              transaction_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              invoice: verifyData.invoice
+            });
+          } catch (err) {
+            setIsProcessing(false);
+            setErrorMsg(err.message || "Cryptographic signature verification failed.");
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setIsProcessing(false);
+          }
+        },
+        prefill: {
+          name: userObj.name || "Patient",
+          email: userObj.email || "patient@sehatsathi.com",
+          contact: userObj.phone || ""
+        },
+        theme: {
+          color: "#2563EB"
+        }
+      };
+
+      if (window.Razorpay) {
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (resp) {
+          setIsProcessing(false);
+          setErrorMsg(`Payment Failed: ${resp.error.description || "Transaction declined"}`);
+        });
+        rzp.open();
+      } else {
+        // Fallback if Razorpay script is blocked
+        throw new Error("Razorpay Checkout SDK script not loaded. Please check internet connection.");
+      }
+    } catch (err) {
+      setIsProcessing(false);
+      setErrorMsg(err.message || "Failed to initialize Razorpay checkout.");
+    }
   };
 
   return (

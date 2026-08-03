@@ -1,30 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from app.database import get_db
 from app.auth_utils import verify_token
-from pydantic import BaseModel
+from app.schemas import EnhancedDonorRegistration, EnhancedBloodRequest
 from typing import Optional
 from datetime import datetime
 
 router = APIRouter(prefix="/donors", tags=["Blood Donors"])
-
-
-class DonorRegistration(BaseModel):
-    fullName: str
-    phone: str
-    bloodGroup: str
-    age: str
-    city: str
-    state: str
-    lastDonation: Optional[str] = None
-
-
-class BloodRequest(BaseModel):
-    patientName: str
-    bloodGroup: str
-    hospital: str
-    city: str
-    urgency: str
-    phone: str
 
 
 @router.get("")
@@ -45,64 +26,80 @@ async def get_donors(blood_group: Optional[str] = None, city: Optional[str] = No
 
 
 @router.post("/register")
-async def register_donor(donor: DonorRegistration, current_user: dict = Depends(verify_token)):
+async def register_donor(donor: EnhancedDonorRegistration, current_user: dict = Depends(verify_token)):
     db = get_db()
     user_id = current_user.get("sub")
 
-    # Check if already registered
-    existing = await db["donors"].find_one({"user_id": user_id})
-    if existing:
-        # Update instead
-        await db["donors"].update_one(
-            {"user_id": user_id},
-            {"$set": {
-                "name": donor.fullName,
-                "phone": donor.phone,
-                "bloodGroup": donor.bloodGroup,
-                "age": donor.age,
-                "city": donor.city,
-                "state": donor.state,
-                "lastDonation": donor.lastDonation,
-                "available": True,
-                "updated_at": datetime.now()
-            }}
-        )
-        return {"success": True, "message": "Donor profile updated successfully!"}
-
-    new_donor = {
+    donor_data = {
         "user_id": user_id,
         "name": donor.fullName,
         "phone": donor.phone,
         "bloodGroup": donor.bloodGroup,
         "age": donor.age,
+        "gender": donor.gender or "Other",
+        "weight": donor.weight,
         "city": donor.city,
         "state": donor.state,
-        "lastDonation": donor.lastDonation,
+        "address": donor.address,
+        "pincode": donor.pincode,
+        "lastDonation": donor.lastDonation or "Never",
+        # Medical & Screening Details
+        "consumes_alcohol": donor.consumes_alcohol,
+        "alcohol_frequency": donor.alcohol_frequency,
+        "last_alcohol_consumed": donor.last_alcohol_consumed,
+        "has_current_illness": donor.has_current_illness,
+        "current_illnesses": donor.current_illnesses,
+        "taking_medications": donor.taking_medications,
+        "medication_details": donor.medication_details,
+        "has_past_major_illness": donor.has_past_major_illness,
+        "past_medical_history": donor.past_medical_history,
+        "recent_surgery_or_vaccination": donor.recent_surgery_or_vaccination,
         "available": True,
-        "registered_at": datetime.now()
+        "updated_at": datetime.now()
     }
-    await db["donors"].insert_one(new_donor)
-    return {"success": True, "message": "Registered as blood donor! You may save a life today. 🩸"}
+
+    # Check if already registered
+    existing = await db["donors"].find_one({"user_id": user_id})
+    if existing:
+        await db["donors"].update_one(
+            {"user_id": user_id},
+            {"$set": donor_data}
+        )
+        return {"success": True, "message": "Blood donor medical profile updated successfully!"}
+
+    donor_data["registered_at"] = datetime.now()
+    await db["donors"].insert_one(donor_data)
+    return {"success": True, "message": "Registered as blood donor with complete medical screening! You may save a life today. 🩸"}
 
 
 @router.post("/request")
-async def request_blood(request: BloodRequest, current_user: dict = Depends(verify_token)):
+async def request_blood(request: EnhancedBloodRequest, current_user: dict = Depends(verify_token)):
     db = get_db()
     user_id = current_user.get("sub")
 
     blood_request = {
         "requested_by": user_id,
         "patientName": request.patientName,
+        "patientAge": request.patientAge,
+        "patientGender": request.patientGender,
         "bloodGroup": request.bloodGroup,
+        "unitsRequired": request.unitsRequired or 1,
         "hospital": request.hospital,
         "city": request.city,
         "urgency": request.urgency,
-        "phone": request.phone,
+        "requesterName": request.requesterName,
+        "requesterPhone": request.requesterPhone,
+        "requesterAddress": request.requesterAddress,
+        "doctorInCharge": request.doctorInCharge,
+        "roomNumber": request.roomNumber,
+        "reasonForBlood": request.reasonForBlood,
+        "patientMedicalHistory": request.patientMedicalHistory,
         "status": "Open",
         "created_at": datetime.now()
     }
     result = await db["blood_requests"].insert_one(blood_request)
-    return {"success": True, "message": "Blood request submitted! Donors in your area will be notified.", "request_id": str(result.inserted_id)}
+    return {"success": True, "message": "Blood request submitted with detailed clinical requirements! Donors will be notified.", "request_id": str(result.inserted_id)}
+
 
 
 @router.get("/requests")

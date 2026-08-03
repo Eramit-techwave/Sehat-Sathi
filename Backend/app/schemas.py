@@ -214,3 +214,72 @@ class NotificationResponse(BaseModel):
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
+
+
+# ─────────────────────────────────────────────────────────────
+# HOSPITAL ROOM BOOKING SCHEMAS
+# ─────────────────────────────────────────────────────────────
+
+class RoomBookingCreate(BaseModel):
+    hospital_id: str = Field(..., description="Target Hospital user_id")
+    room_type: str = Field(..., description="'General Ward' | 'Semi-Private Room' | 'Private Deluxe AC Room' | 'ICU / Critical Care' | 'Super-Specialty Suite'")
+    daily_rate: float = Field(..., gt=0, description="Per day room tariff in INR")
+    duration_days: int = Field(..., gt=0, description="Expected stay duration in days")
+    admission_date: str = Field(..., description="YYYY-MM-DD format")
+    patient_name: str = Field(..., description="Full name of patient to be admitted")
+    patient_age: str = Field(..., description="Age of patient")
+    patient_gender: str = Field(..., description="Gender: Male | Female | Other")
+    contact_phone: str = Field(..., description="Primary contact number")
+    attendant_name: Optional[str] = Field(None, description="Attendant / Emergency contact name")
+    attendant_relation: Optional[str] = Field(None, description="Relation to patient")
+    reason: Optional[str] = Field(None, description="Reason for admission / diagnosis")
+    payment_method: Optional[str] = Field("UPI", description="'UPI' | 'Card' | 'NetBanking' | 'Cash'")
+    payment_status: Optional[str] = Field("Paid", description="'Paid' | 'Pay at Hospital'")
+    transaction_id: Optional[str] = Field(None, description="Transaction ID for room booking")
+
+
+# ─────────────────────────────────────────────────────────────
+# ENHANCED BLOOD DONOR & REQUEST SCHEMAS
+# ─────────────────────────────────────────────────────────────
+
+class EnhancedDonorRegistration(BaseModel):
+    fullName: str = Field(..., description="Full name of donor")
+    phone: str = Field(..., description="Contact mobile number")
+    bloodGroup: str = Field(..., description="Blood Group: A+, A-, B+, B-, AB+, AB-, O+, O-")
+    age: str = Field(..., description="Age in years")
+    gender: Optional[str] = Field("Other", description="Male | Female | Other")
+    weight: Optional[str] = Field(None, description="Weight in kg")
+    city: str = Field(..., description="City name")
+    state: str = Field(..., description="State name")
+    address: str = Field(..., description="Full residential address with street and area")
+    pincode: Optional[str] = Field(None, description="PIN code")
+    lastDonation: Optional[str] = Field(None, description="Last blood donation date or 'Never'")
+    # Medical & Health Screening Questionnaire
+    consumes_alcohol: bool = Field(default=False, description="Does donor consume alcohol?")
+    alcohol_frequency: Optional[str] = Field(None, description="Frequency: Daily | Weekly | Socially | Rarely | Never")
+    last_alcohol_consumed: Optional[str] = Field(None, description="When was alcohol last consumed? e.g., '3 days ago'")
+    has_current_illness: bool = Field(default=False, description="Any current illness or symptoms?")
+    current_illnesses: Optional[str] = Field(None, description="Details of current illnesses/symptoms or medications")
+    taking_medications: bool = Field(default=False, description="Taking any regular prescription medicines?")
+    medication_details: Optional[str] = Field(None, description="Details of current medications")
+    has_past_major_illness: bool = Field(default=False, description="History of past major illnesses?")
+    past_medical_history: Optional[str] = Field(None, description="Detailed history of past major illnesses: what illness, when occurred, duration, treatment details")
+    recent_surgery_or_vaccination: bool = Field(default=False, description="Any recent surgery, tattoo, or vaccination in last 6 months?")
+
+
+class EnhancedBloodRequest(BaseModel):
+    patientName: str = Field(..., description="Patient requiring blood")
+    patientAge: Optional[str] = Field(None, description="Patient age")
+    patientGender: Optional[str] = Field(None, description="Patient gender")
+    bloodGroup: str = Field(..., description="Target blood group")
+    unitsRequired: Optional[int] = Field(default=1, description="Number of units required")
+    hospital: str = Field(..., description="Hospital name & address")
+    city: str = Field(..., description="City")
+    urgency: str = Field(..., description="Immediate (Emergency) | Within 24 hrs | Scheduled")
+    requesterName: str = Field(..., description="Full name of person requesting")
+    requesterPhone: str = Field(..., description="Contact phone number")
+    requesterAddress: str = Field(..., description="Full address of requester/hospital")
+    doctorInCharge: Optional[str] = Field(None, description="Attending Doctor name")
+    roomNumber: Optional[str] = Field(None, description="Hospital Ward / Room Number")
+    reasonForBlood: Optional[str] = Field(None, description="Medical reason / diagnosis requiring blood")
+    patientMedicalHistory: Optional[str] = Field(None, description="Patient's medical history & past conditions")

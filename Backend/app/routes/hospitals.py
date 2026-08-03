@@ -9,8 +9,8 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 from app.database import get_db
 from app.auth_utils import verify_token, require_role
-from app.schemas import HospitalProfile, BedAvailabilityUpdate, HospitalAnnouncement
-from typing import Optional
+from app.schemas import HospitalProfile, BedAvailabilityUpdate, HospitalAnnouncement, RoomBookingCreate
+from typing import Optional, List, Dict, Any
 
 router = APIRouter(prefix="/hospitals", tags=["Hospitals"])
 
@@ -423,3 +423,199 @@ async def get_hospital_doctors(current_user: dict = Depends(verify_token)):
                 "association_role": assoc_role
             })
     return result
+
+
+# ─────────────────────────────────────────────────────────────
+# HOSPITAL ROOM / BED BOOKING ENDPOINTS
+# ─────────────────────────────────────────────────────────────
+
+@router.post("/book-room")
+async def book_hospital_room(
+    booking: RoomBookingCreate,
+    current_user: dict = Depends(verify_token)
+):
+    """
+    Book a hospital bed / room (General Ward, Semi-Private, Deluxe AC, ICU, VIP Suite).
+    Calculates 18% GST and total stay charges, creates booking record, and fires notifications.
+    """
+    db = get_db()
+    user_id = current_user.get("sub")
+
+    # Resolve hospital user & name
+    try:
+        hosp_oid = ObjectId(booking.hospital_id) if len(booking.hospital_id) == 24 else None
+        hosp_user = await db["users"].find_one({"_id": hosp_oid}) if hosp_oid else None
+    except Exception:
+        hosp_user = None
+
+    hospital_name = hosp_user.get("name", "Sehat-Sathi Partnered Hospital") if hosp_user else "Sehat-Sathi Partnered Hospital"
+
+    # Financial calculation
+    daily_rate = round(booking.daily_rate, 2)
+    days = max(1, booking.duration_days)
+    base_amount = round(daily_rate * days, 2)
+    tax_amount = round(base_amount * 0.18, 2)
+    total_amount = round(base_amount + tax_amount, 2)
+
+    txn_id = booking.transaction_id or f"ROOM-TXN-{int(datetime.now().timestamp() * 1000)}"
+    booking_ref = f"ROOM-2026-{int(datetime.now().timestamp()) % 1000000}"
+
+    booking_doc = {
+        "user_id": user_id,
+        "hospital_id": booking.hospital_id,
+        "hospital_name": hospital_name,
+        "room_type": booking.room_type,
+        "daily_rate": daily_rate,
+        "duration_days": days,
+        "admission_date": booking.admission_date,
+        "patient_name": booking.patient_name,
+        "patient_age": booking.patient_age,
+        "patient_gender": booking.patient_gender,
+        "contact_phone": booking.contact_phone,
+        "attendant_name": booking.attendant_name,
+        "attendant_relation": booking.attendant_relation,
+        "reason": booking.reason or "Hospital Bed Admission",
+        "base_amount": base_amount,
+        "tax_amount": tax_amount,
+        "total_amount": total_amount,
+        "payment_method": (booking.payment_method or "UPI").upper(),
+        "payment_status": booking.payment_status or "Paid",
+        "transaction_id": txn_id,
+        "booking_reference": booking_ref,
+        "status": "Confirmed" if (booking.payment_status or "Paid").lower() == "paid" else "Pending",
+        "created_at": datetime.now()
+    }
+
+    res = await db["hospital_room_bookings"].insert_one(booking_doc)
+    booking_id = str(res.inserted_id)
+
+    # Automatically generate invoice for room booking
+    inv_number = f"INV-ROOM-2026-{int(datetime.now().timestamp()) % 100000}"
+    inv_doc = {
+        "invoice_number": inv_number,
+        "user_id": user_id,
+        "patient_name": booking.patient_name,
+        "patient_id": f"PAT-{(user_id[:6]).upper()}",
+        "doctor_name": f"{booking.room_type} Specialist Team",
+        "doctor_specialization": "Inpatient Hospital Care",
+        "hospital_name": hospital_name,
+        "service_name": f"Hospital Room Reservation ({booking.room_type} - {days} Days)",
+        "base_amount": base_amount,
+        "tax_rate": 18.0,
+        "tax_amount": tax_amount,
+        "discount": 0.0,
+        "total_amount": total_amount,
+        "payment_method": (booking.payment_method or "UPI").upper(),
+        "payment_status": booking.payment_status or "Paid",
+        "reference_number": txn_id,
+        "transaction_id": txn_id,
+        "founder_name": "Amit Dubey",
+        "company_name": "Sehat-Sathi",
+        "company_url": "www.sehatsathi.com",
+        "created_at": datetime.now()
+    }
+
+    try:
+        await db["invoices"].insert_one(inv_doc)
+    except Exception as e:
+        print("[WARN] Room invoice auto-creation note:", e)
+
+    # Send Notification to Patient
+    try:
+        await db["notifications"].insert_one({
+            "user_id": user_id,
+            "type": "room_booked",
+            "title": "Hospital Room Booked Successfully 🏥",
+            "message": f"Your {booking.room_type} at {hospital_name} is reserved for {booking.admission_date} ({days} days). Total: ₹{total_amount}",
+            "is_read": False,
+            "metadata": {"booking_id": booking_id, "transaction_id": txn_id},
+            "created_at": datetime.now()
+        })
+    except Exception:
+        pass
+
+    # Send Notification to Hospital
+    if booking.hospital_id and len(booking.hospital_id) == 24:
+        try:
+            await db["notifications"].insert_one({
+                "user_id": booking.hospital_id,
+                "type": "room_booked",
+                "title": "New Hospital Room Booking 🛌",
+                "message": f"Patient {booking.patient_name} booked {booking.room_type} starting {booking.admission_date} ({days} days).",
+                "is_read": False,
+                "metadata": {"booking_id": booking_id, "patient_name": booking.patient_name},
+                "created_at": datetime.now()
+            })
+        except Exception:
+            pass
+
+    return {
+        "success": True,
+        "message": f"Hospital room ({booking.room_type}) booked successfully!",
+        "booking_id": booking_id,
+        "booking_reference": booking_ref,
+        "transaction_id": txn_id,
+        "total_amount": total_amount,
+        "hospital_name": hospital_name,
+        "status": booking_doc["status"]
+    }
+
+
+@router.get("/my-room-bookings")
+async def get_my_room_bookings(current_user: dict = Depends(verify_token)):
+    """Fetch room bookings created by current patient."""
+    db = get_db()
+    user_id = current_user.get("sub")
+
+    cursor = db["hospital_room_bookings"].find({"user_id": user_id}).sort("created_at", -1)
+    bookings = await cursor.to_list(length=100)
+    for b in bookings:
+        b["id"] = str(b["_id"])
+        b.pop("_id", None)
+        if isinstance(b.get("created_at"), datetime):
+            b["created_at"] = b["created_at"].isoformat()
+    return bookings
+
+
+@router.get("/me/room-bookings")
+async def get_hospital_received_room_bookings(current_user: dict = Depends(verify_token)):
+    """Hospital dashboard route: List room bookings received by this hospital."""
+    db = get_db()
+    user_id = current_user.get("sub")
+
+    cursor = db["hospital_room_bookings"].find({"hospital_id": user_id}).sort("created_at", -1)
+    bookings = await cursor.to_list(length=200)
+    for b in bookings:
+        b["id"] = str(b["_id"])
+        b.pop("_id", None)
+        if isinstance(b.get("created_at"), datetime):
+            b["created_at"] = b["created_at"].isoformat()
+    return bookings
+
+
+@router.put("/room-bookings/{booking_id}/status")
+async def update_room_booking_status(
+    booking_id: str,
+    status: str,
+    current_user: dict = Depends(verify_token)
+):
+    """Update status of a room booking (Confirmed, Admitted, Discharged, Cancelled)."""
+    db = get_db()
+    try:
+        b_oid = ObjectId(booking_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid booking ID format")
+
+    allowed = ["Pending", "Confirmed", "Admitted", "Discharged", "Cancelled"]
+    if status not in allowed:
+        raise HTTPException(status_code=400, detail=f"Status must be one of: {', '.join(allowed)}")
+
+    res = await db["hospital_room_bookings"].update_one(
+        {"_id": b_oid},
+        {"$set": {"status": status, "updated_at": datetime.now()}}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Room booking not found")
+
+    return {"success": True, "message": f"Booking status updated to '{status}'"}
+

@@ -86,6 +86,12 @@ async def connect_to_mongo():
             await db["referrals"].create_index([("referring_doctor_id", 1), ("created_at", -1)])
             await db["referrals"].create_index([("referred_to_doctor_id", 1), ("status", 1)])
             await db["referrals"].create_index([("patient_id", 1), ("created_at", -1)])
+
+            # Payments: fast order lookup & user transaction audit log
+            await db["payments"].create_index([("order_id", 1)], unique=True, sparse=True)
+            await db["payments"].create_index([("payment_id", 1)], sparse=True)
+            await db["payments"].create_index([("user_id", 1), ("created_at", -1)])
+            await db["payments"].create_index([("status", 1)])
         except Exception as idx_err:
             print(f"[INFO] Index setup note: {idx_err}")
 

@@ -9,6 +9,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    # Razorpay Payment Gateway Configuration
+    RAZORPAY_KEY_ID: str = "rzp_test_TLFligzH93mFjS"
+    RAZORPAY_KEY_SECRET: str = "jkjxmPmmCKHS3FLpDhqWXPhk"
+    RAZORPAY_WEBHOOK_SECRET: str = "sehat_sathi_wh_sec_2026_x9"
+
     # GEMINI_API_KEY is an alias for PARSER_API_KEY for backward compatibility
     @property
     def GEMINI_API_KEY(self) -> str:
