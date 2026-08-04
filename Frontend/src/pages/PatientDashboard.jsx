@@ -291,7 +291,7 @@ export default function PatientDashboard() {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({
-          doctor_id: bookingDoctor.id || bookingDoctor._id || "650000000000000000000001",
+          doctor_id: String(bookingDoctor?.id || bookingDoctor?._id || bookingDoctor?.user_id || "650000000000000000000001"),
           doctor_name: docName,
           doctor_specialty: docSpec,
           hospital_id: bookingDoctor.hospital_id || null,
@@ -1218,7 +1218,7 @@ export default function PatientDashboard() {
         )}
 
         {/* ── BOOKING MODAL ────────────────────────────────────────── */}
-        {bookingDoctor && (
+        {bookingDoctor && !showPaymentModal && (
           <div className="modal-overlay" onClick={() => setBookingDoctor(null)} style={{ zIndex: 99999 }}>
             <div
               onClick={e => e.stopPropagation()}

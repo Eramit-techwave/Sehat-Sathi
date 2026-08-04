@@ -30,6 +30,20 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
   const platformFee = 0;
   const totalAmount = fee + platformFee;
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePayAndBook = async () => {
     setErrorMsg("");
     setIsProcessing(true);
@@ -46,12 +60,17 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
           amount: totalAmount,
           transaction_id: `CASH-${Date.now()}`,
         });
-      }, 800);
+      }, 600);
       return;
     }
 
     // REAL RAZORPAY PAYMENT INTEGRATION FLOW
     try {
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded || !window.Razorpay) {
+        throw new Error("Razorpay Checkout SDK failed to load. Please check your internet connection or try Pay at Clinic.");
+      }
+
       const token = localStorage.getItem("sehat_sathi_token") || localStorage.getItem("token");
       const userStr = localStorage.getItem("sehat_sathi_user");
       let userObj = {};
@@ -62,6 +81,12 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
         ...(token ? { "Authorization": `Bearer ${token}` } : {})
       };
 
+      const docId = String(doctor?.id || doctor?._id || doctor?.user_id || "650000000000000000000001");
+      const rawDocName = doctor?.name || doctor?.doctor_name || "Doctor Specialist";
+      const docName = rawDocName.startsWith("Dr.") ? rawDocName : `Dr. ${rawDocName}`;
+      const docSpec = doctor?.specialty || doctor?.specialization || "General Physician";
+      const hospName = doctor?.hospital_name || doctor?.hospital || "Sehat-Sathi Partnered Clinic";
+
       // 1. Create Razorpay Order via Backend POST /payments/create-order
       const orderRes = await fetch(`${API_BASE}/payments/create-order`, {
         method: "POST",
@@ -71,8 +96,8 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
           currency: "INR",
           booking_type: "appointment",
           notes: {
-            doctor_name: doctor?.name,
-            doctor_id: doctor?.id || doctor?._id,
+            doctor_name: docName,
+            doctor_id: docId,
             date: appointmentData?.date,
             time_slot: appointmentData?.time_slot
           }
@@ -93,7 +118,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
         amount: orderData.amount,
         currency: orderData.currency || "INR",
         name: "Sehat-Sathi Healthcare",
-        description: `Consultation Fee — Dr. ${doctor?.name || 'Specialist'}`,
+        description: `Consultation Fee — ${docName}`,
         image: "https://sehat-sathi-bay.vercel.app/favicon.svg",
         order_id: orderData.order_id,
         handler: async function (response) {
@@ -108,15 +133,15 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
                 razorpay_signature: response.razorpay_signature,
                 booking_type: "appointment",
                 booking_payload: {
-                  doctor_id: doctor?.id || doctor?._id || "650000000000000000000001",
-                  doctor_name: doctor?.name ? (doctor.name.startsWith("Dr.") ? doctor.name : `Dr. ${doctor.name}`) : "Dr. Specialist",
+                  doctor_id: docId,
+                  doctor_name: docName,
                   hospital_id: doctor?.hospital_id || null,
                   date: appointmentData?.date,
                   time_slot: appointmentData?.time_slot,
                   reason: appointmentData?.reason || "General health consultation",
                   amount: totalAmount,
-                  doctor_specialty: doctor?.specialty || doctor?.specialization || "General Physician",
-                  hospital_name: doctor?.hospital_name || doctor?.hospital || "Sehat-Sathi Partnered Clinic"
+                  doctor_specialty: docSpec,
+                  hospital_name: hospName
                 }
               })
             });
@@ -155,21 +180,14 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
         }
       };
 
-      if (window.Razorpay) {
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (resp) {
-          setIsProcessing(false);
-          const msg = `Payment Failed: ${resp.error?.description || "Transaction declined by bank"}`;
-          setErrorMsg(msg);
-          setShowFailureModal(true);
-        });
-        rzp.open();
-      } else {
-        // Fallback if Razorpay SDK fails to open
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
         setIsProcessing(false);
-        setErrorMsg("Razorpay Payment Gateway unreachable. You can retry online or pay at clinic.");
+        const msg = `Payment Failed: ${resp.error?.description || "Transaction declined by bank"}`;
+        setErrorMsg(msg);
         setShowFailureModal(true);
-      }
+      });
+      rzp.open();
     } catch (err) {
       setIsProcessing(false);
       setErrorMsg(err.message || "Failed to initialize Razorpay checkout.");
@@ -180,7 +198,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
   return (
     <div
       style={{
-        position: "fixed", inset: 0, zIndex: 10000,
+        position: "fixed", inset: 0, zIndex: 100000,
         background: "rgba(15, 23, 42, 0.70)",
         backdropFilter: "blur(6px)",
         display: "flex", alignItems: "center", justifyContent: "center",

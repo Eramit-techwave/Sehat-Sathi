@@ -81,7 +81,11 @@ _photos_dir = os.path.join(os.path.dirname(__file__), "..", "stored_reports", "p
 os.makedirs(_photos_dir, exist_ok=True)
 app.mount("/static/photos", StaticFiles(directory=_photos_dir), name="profile_photos")
 
-# 🗺️ BASE SANITY CHECK ROUTE
+# 🗺️ BASE SANITY CHECK & HEALTH ROUTES
+@app.get("/health", tags=["Health Check"])
+def health_check():
+    return {"status": "ok", "service": "Sehat-Sathi Backend", "version": "3.0.0"}
+
 @app.get("/", tags=["Sanity Root Check"])
 def root_check():
     return {

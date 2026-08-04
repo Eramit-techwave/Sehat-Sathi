@@ -31,8 +31,8 @@ export default function DoctorCard({ doctor, onBook, compact = false }) {
       position: "relative",
       overflow: "hidden",
     }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = T.shadowMd; e.currentTarget.style.borderColor = T.primaryBorder; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = T.shadowSm; e.currentTarget.style.borderColor = T.border; }}
+      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = T.shadowMd; e.currentTarget.style.border = `1px solid ${T.primaryBorder}`; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = T.shadowSm; e.currentTarget.style.border = `1px solid ${T.border}`; }}
     >
       {/* Availability indicator strip */}
       <div style={{

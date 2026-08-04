@@ -215,13 +215,14 @@ export default function AppointmentsModule({
                       created_at: apt.created_at || apt.date
                     })}
                     style={{
-                      padding: "8px 14px", background: "rgba(16,185,129,0.1)",
-                      border: "1px solid rgba(16,185,129,0.3)", color: "#059669",
-                      borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 600, cursor: "pointer",
-                      display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                      padding: "9px 16px", background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)",
+                      border: "1px solid #334155", color: "#38BDF8",
+                      borderRadius: "10px", fontSize: 12.5, fontWeight: 800, cursor: "pointer",
+                      display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit",
+                      boxShadow: "0 4px 12px rgba(15, 23, 42, 0.25)", transition: "all 0.15s ease"
                     }}
                   >
-                    <FileText size={12} /> View Invoice Slip
+                    <FileText size={15} style={{ color: "#38BDF8" }} /> 📄 Download PDF Invoice Slip
                   </button>
 
                   {apt.status !== "Cancelled" && (
