@@ -66,24 +66,23 @@ async def book_appointment(
     user_id: str = current_user.get("sub")
 
     # Safe doctor lookup — handle valid ObjectId or string/demo ID gracefully
-    doc_exists = None
-    doctor_name = "Doctor Specialist"
-    try:
-        if appointment.doctor_id and len(appointment.doctor_id) == 24:
-            doctor_oid = ObjectId(appointment.doctor_id)
-            doc_exists = await db["users"].find_one({"_id": doctor_oid})
-            if doc_exists:
-                doctor_name = doc_exists.get("name", "Doctor Specialist")
-    except Exception:
-        doc_exists = None
+    doctor_name = appointment.doctor_name or "Doctor Specialist"
+    doctor_specialty = appointment.doctor_specialty or "General Physician"
+    hospital_name = appointment.hospital_name or "Sehat-Sathi Care Clinic"
+    patient_name = appointment.patient_name or current_user.get("name") or "Patient"
 
-    if not doc_exists:
-        # Check if there is any Doctor user in database as fallback
-        first_doc = await db["users"].find_one({"role": "Doctor"})
-        if first_doc:
-            doc_exists = first_doc
-            doctor_name = first_doc.get("name", "Doctor Specialist")
-            appointment.doctor_id = str(first_doc["_id"])
+    # Only look up DB doctor if doctor_name was NOT explicitly provided by caller
+    if not appointment.doctor_name or appointment.doctor_name == "Doctor Specialist":
+        try:
+            if appointment.doctor_id and len(appointment.doctor_id) == 24:
+                doctor_oid = ObjectId(appointment.doctor_id)
+                doc_exists = await db["users"].find_one({"_id": doctor_oid})
+                if doc_exists:
+                    doctor_name = doc_exists.get("name", doctor_name)
+                    doctor_specialty = doc_exists.get("specialty", doc_exists.get("specialization", doctor_specialty))
+                    hospital_name = doc_exists.get("hospital_name", doc_exists.get("hospital", hospital_name))
+        except Exception:
+            pass
 
     # Server-side conflict detection (same doctor, date, time slot, non-cancelled)
     existing = await db["appointments"].find_one({
@@ -105,13 +104,19 @@ async def book_appointment(
     )
     txn_id: str = appointment.transaction_id or f"TXN-{int(datetime.now().timestamp() * 1000)}"
 
+    formatted_doc_name = doctor_name if doctor_name.startswith("Dr.") else f"Dr. {doctor_name}"
+
     new_apt: Dict[str, Any] = {
         "patient_id": user_id,
+        "patient_name": patient_name,
         "doctor_id": appointment.doctor_id,
+        "doctor_name": formatted_doc_name,
+        "doctor_specialty": doctor_specialty,
         "hospital_id": appointment.hospital_id,
+        "hospital_name": hospital_name,
         "date": appointment.date,
         "time_slot": appointment.time_slot,
-        "status": "Confirmed" if payment_status == "Paid" else "Pending",
+        "status": "Confirmed" if payment_status in ("Paid", "Completed") else "Pending",
         "reason": appointment.reason or "General Health Consultation",
         "payment_method": payment_method.upper(),
         "payment_status": payment_status,
@@ -211,12 +216,14 @@ async def get_my_appointments(current_user: dict = Depends(verify_token)):
 
         # Fetch doctor and patient names safely
         try:
-            doc = await db["users"].find_one({"_id": ObjectId(apt["doctor_id"])})
-            pat = await db["users"].find_one({"_id": ObjectId(apt["patient_id"])})
-            if doc:
-                apt["doctor_name"] = doc.get("name")
-            if pat:
-                apt["patient_name"] = pat.get("name")
+            if "doctor_id" in apt and len(str(apt["doctor_id"])) == 24:
+                doc = await db["users"].find_one({"_id": ObjectId(apt["doctor_id"])})
+                if doc:
+                    apt["doctor_name"] = doc.get("name")
+            if "patient_id" in apt and len(str(apt["patient_id"])) == 24:
+                pat = await db["users"].find_one({"_id": ObjectId(apt["patient_id"])})
+                if pat:
+                    apt["patient_name"] = pat.get("name")
         except Exception:
             pass
 
@@ -592,3 +599,25 @@ async def update_appointment_status(
         "date": assigned_date,
         "time_slot": assigned_slot,
     }
+
+
+@router.delete("/{appointment_id}")
+async def delete_cancelled_appointment(
+    appointment_id: str,
+    current_user: dict = Depends(verify_token),
+):
+    """Permanently delete an appointment record."""
+    db = get_db()
+    user_id = str(current_user.get("sub"))
+
+    query_list = [{"id": appointment_id}, {"appointment_id": appointment_id}, {"transaction_id": appointment_id}]
+    if len(appointment_id) == 24:
+        try:
+            query_list.append({"_id": ObjectId(appointment_id)})
+        except Exception:
+            pass
+
+    # Safe deletion query
+    await db["appointments"].delete_many({"$or": query_list})
+
+    return {"success": True, "message": "Appointment deleted successfully."}

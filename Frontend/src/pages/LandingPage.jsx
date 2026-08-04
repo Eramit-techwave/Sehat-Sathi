@@ -27,6 +27,7 @@ import {
   MapPin, Calendar, MessageSquare, Video, Headphones, Shield,
   TrendingUp, AlertCircle as AlertIcon, ArrowRight, Star, Bot,
 } from "lucide-react";
+import Cinematic3DHealthcareExperience from "../components/Cinematic3DHealthcareExperience";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA  (identical to original — do not modify)
@@ -879,53 +880,22 @@ export default function LandingPage() {
               </motion.div>
             </motion.div>
 
-            {/* ── Right: 3D Doctor Illustration ── */}
+            {/* ── Right: Interactive 3D Healthcare Experience ── */}
             <motion.div
               initial={{ opacity: 0, y: 44, scale: 0.96 }}
               animate={heroInView ? { opacity: 1, y: 0, scale: 1 } : {}}
               transition={{ delay: 0.22, duration: 0.88, ease: EASE }}
               style={{ position: "relative" }}
             >
-              {/* Outer glow ring */}
+              {/* Outer ambient glow */}
               <div style={{
                 position: "absolute", inset: -32,
-                background: "radial-gradient(ellipse at 55% 45%, rgba(37,99,235,0.12) 0%, rgba(16,185,129,0.07) 45%, transparent 70%)",
+                background: "radial-gradient(ellipse at 55% 45%, rgba(37,99,235,0.18) 0%, rgba(16,185,129,0.10) 45%, transparent 70%)",
                 pointerEvents: "none", zIndex: 0,
               }} />
 
-              {/* 3D perspective card */}
-              <motion.div
-                whileHover={{
-                  rotateY: 0, rotateX: 0,
-                  boxShadow: "0 40px 100px rgba(37,99,235,0.18), 0 0 0 1px rgba(37,99,235,0.08)",
-                }}
-                initial={{ rotateY: -3, rotateX: 2 }}
-                animate={heroInView ? { rotateY: -3, rotateX: 2 } : {}}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                style={{
-                  position: "relative", zIndex: 1,
-                  borderRadius: 28,
-                  overflow: "hidden",
-                  boxShadow: "0 32px 80px rgba(0,0,0,0.16), 0 0 0 1px rgba(255,255,255,0.08)",
-                  transformStyle: "preserve-3d",
-                  perspective: 1000,
-                }}
-              >
-                <img
-                  src="/hero-doctor.png"
-                  alt="AI-powered doctor consultation — SehatSathi"
-                  style={{
-                    width: "100%", height: "auto", display: "block",
-                    borderRadius: 28,
-                  }}
-                />
-                {/* Subtle gloss overlay */}
-                <div style={{
-                  position: "absolute", inset: 0,
-                  background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 50%, rgba(0,0,0,0.04) 100%)",
-                  pointerEvents: "none", borderRadius: 28,
-                }} />
-              </motion.div>
+              {/* Cinematic 5-Scene 3D Storytelling Experience */}
+              <Cinematic3DHealthcareExperience />
             </motion.div>
           </div>
         </motion.div>

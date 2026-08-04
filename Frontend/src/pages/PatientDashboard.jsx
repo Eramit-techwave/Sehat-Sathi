@@ -28,6 +28,7 @@ import DoctorProfileModal from "./patient/DoctorProfileModal";
 import AppointmentsModule from "./patient/AppointmentsModule";
 import AppointmentPaymentModal from "../components/AppointmentPaymentModal";
 import PaymentInvoiceModal from "../components/PaymentInvoiceModal";
+import PaymentSuccessModal from "../components/PaymentSuccessModal";
 import EnhancedBloodModal from "../components/EnhancedBloodModal";
 import HospitalRoomBookingModal from "../components/HospitalRoomBookingModal";
 
@@ -233,6 +234,7 @@ export default function PatientDashboard() {
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
+  const [successBookingData, setSuccessBookingData] = useState(null);
   const [bloodModalMode, setBloodModalMode] = useState(null); // 'register' | 'request' | null
 
   const handleOpenBooking = (doctor) => {
@@ -253,12 +255,29 @@ export default function PatientDashboard() {
   const handleFinalBookingConfirm = async (paymentData) => {
     setBookingLoading(true);
     try {
+      const docName = bookingDoctor?.name?.startsWith("Dr.") ? bookingDoctor.name : `Dr. ${bookingDoctor?.name || 'Specialist'}`;
+      const docSpec = bookingDoctor?.specialty || bookingDoctor?.specialization || "General Physician";
+      const hospName = bookingDoctor?.hospital_name || bookingDoctor?.hospital || "Sehat-Sathi Partnered Clinic";
+
       // If Razorpay verification already booked the appointment server-side:
       if (paymentData?.invoice) {
-        showNotif(`✅ Appointment booked with Dr. ${bookingDoctor?.name || 'Specialist'}! Official Receipt & Invoice generated.`);
+        showNotif(`Appointment booked successfully.`, "success");
+        showNotif(`Payment completed successfully via Razorpay.`, "success");
         setShowPaymentModal(false);
+        const inv = paymentData.invoice;
+        setSuccessBookingData({
+          doctor_name: docName,
+          doctor_specialty: docSpec,
+          hospital_name: hospName,
+          date: bookingForm.date,
+          time_slot: bookingForm.time_slot,
+          appointment_id: inv.appointment_id || inv.id,
+          transaction_id: paymentData.transaction_id,
+          amount: paymentData.amount || 500,
+          payment_method: paymentData.payment_method,
+          invoice: inv
+        });
         setBookingDoctor(null);
-        setActiveInvoice(paymentData.invoice);
         loadAppointments();
         setBookingLoading(false);
         return;
@@ -269,7 +288,11 @@ export default function PatientDashboard() {
         headers: { ...authHeaders, "Content-Type": "application/json" },
         body: JSON.stringify({
           doctor_id: bookingDoctor.id || bookingDoctor._id || "650000000000000000000001",
+          doctor_name: docName,
+          doctor_specialty: docSpec,
           hospital_id: bookingDoctor.hospital_id || null,
+          hospital_name: hospName,
+          patient_name: user?.name || "Patient",
           date: bookingForm.date,
           time_slot: bookingForm.time_slot,
           reason: bookingForm.reason || "General consultation",
@@ -287,9 +310,9 @@ export default function PatientDashboard() {
         invoice_number: `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`,
         patient_name: user?.name || "Patient",
         patient_id: `PAT-${(user?.id || "892410").slice(-6).toUpperCase()}`,
-        doctor_name: bookingDoctor.name?.startsWith("Dr.") ? bookingDoctor.name : `Dr. ${bookingDoctor.name}`,
-        doctor_specialization: bookingDoctor.specialty || "General Physician",
-        hospital_name: bookingDoctor.hospital_name || "Sehat-Sathi Partnered Care Clinic",
+        doctor_name: docName,
+        doctor_specialization: docSpec,
+        hospital_name: hospName,
         service_name: "Doctor Consultation & Health Guidance",
         base_amount: paymentData.amount || 500,
         tax_amount: Math.round((paymentData.amount || 500) * 0.18),
@@ -311,13 +334,45 @@ export default function PatientDashboard() {
         console.warn("Invoice creation ping warning:", err);
       }
 
-      showNotif(`✅ Appointment booked with Dr. ${bookingDoctor.name}! Official Receipt & Invoice generated.`);
+      showNotif(`Appointment booked successfully.`, "success");
+      showNotif(`Payment completed successfully.`, "success");
       setShowPaymentModal(false);
+      setSuccessBookingData({
+        doctor_name: docName,
+        doctor_specialty: docSpec,
+        hospital_name: hospName,
+        date: bookingForm.date,
+        time_slot: bookingForm.time_slot,
+        appointment_id: data.appointment_id || `SS-APT-${Date.now()}`,
+        transaction_id: paymentData.transaction_id,
+        amount: paymentData.amount || 500,
+        payment_method: paymentData.payment_method || "CASH",
+        invoice: invObj
+      });
       setBookingDoctor(null);
-      setActiveInvoice(invObj); // Automatically opens Payment Invoice modal!
       loadAppointments();
     } catch (e) { showNotif(e.message, "error"); }
     setBookingLoading(false);
+  };
+
+  const handleDeleteAppointment = async (aptId) => {
+    if (!aptId) return;
+    try {
+      setAppointments(prev => prev.filter(a => (a.id || a._id || a.appointment_id) !== aptId));
+      const res = await fetch(`${API_BASE}/appointments/${aptId}`, {
+        method: "DELETE",
+        headers: authHeaders,
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.detail || "Delete failed");
+      }
+      showNotif("Cancelled appointment deleted successfully.", "success");
+      loadAppointments();
+    } catch (err) {
+      showNotif(err.message || "Failed to delete appointment", "error");
+      loadAppointments();
+    }
   };
 
   const loadDonors = async () => {
@@ -855,6 +910,7 @@ export default function PatientDashboard() {
             onBack={() => { setActiveModule(null); setRescheduleTarget(null); }}
             onReschedule={handleReschedule}
             onCancel={handleCancelAppointment}
+            onDelete={handleDeleteAppointment}
           />
         )}
 
@@ -1285,6 +1341,23 @@ export default function PatientDashboard() {
             appointmentData={bookingForm}
             onClose={() => setShowPaymentModal(false)}
             onConfirmBooking={handleFinalBookingConfirm}
+          />
+        )}
+
+        {/* ── PAYMENT SUCCESS CONFIRMATION MODAL ───────────────── */}
+        {successBookingData && (
+          <PaymentSuccessModal
+            bookingData={successBookingData}
+            onClose={() => setSuccessBookingData(null)}
+            onViewReceipt={() => {
+              const inv = successBookingData.invoice;
+              setSuccessBookingData(null);
+              setActiveInvoice(inv);
+            }}
+            onViewAppointments={() => {
+              setSuccessBookingData(null);
+              setActiveModule("appointments");
+            }}
           />
         )}
 

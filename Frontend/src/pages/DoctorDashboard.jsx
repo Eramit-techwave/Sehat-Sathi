@@ -4,7 +4,7 @@ import { useLanguage } from "../context/LanguageContext";
 import {
   CheckCircle2, Clock, Users, Calendar, Loader2, LogOut,
   Edit2, Save, X, Activity, AlertCircle, Building2, Stethoscope,
-  IndianRupee, Plus, Trash2, Star, Wifi, WifiOff, MapPin, ShieldCheck
+  IndianRupee, Plus, Trash2, Star, Wifi, WifiOff, MapPin, ShieldCheck, Video, MessageSquare
 } from "lucide-react";
 // V2 Module Imports
 import PrescriptionPad from "./v2/PrescriptionPad";
@@ -12,6 +12,9 @@ import FollowUpManager from "./v2/FollowUpManager";
 import FloatingNotification from "../components/FloatingNotification";
 import { inputStyle } from "../ui/theme";
 import Button from "../components/Button";
+import VideoCallModal from "../components/VideoCallModal";
+import DoctorDirectChatModal from "../components/DoctorDirectChatModal";
+import { useTelehealthBridge } from "../context/TelehealthBridgeContext";
 
 
 import { API_BASE } from "../api/client";
@@ -84,8 +87,11 @@ export default function DoctorDashboard() {
   const [savingAvailability, setSavingAvailability] = useState(false);
 
   // ── PATIENTS ───────────────────────────────────────────────────
+  const { initiateCall, openChat } = useTelehealthBridge();
   const [patients, setPatients] = useState([]);
   const [patientsLoading, setPatientsLoading] = useState(false);
+  const [activeDocVideoApt, setActiveDocVideoApt] = useState(null);
+  const [activeDocChatApt, setActiveDocChatApt] = useState(null);
 
   // ── PROFILE ────────────────────────────────────────────────────
   const [profile, setProfile] = useState({
@@ -254,9 +260,23 @@ export default function DoctorDashboard() {
         method: "PUT", headers: authHeaders
       });
       if (!res.ok) throw new Error("Update failed");
-      showNotif(`Appointment ${status.toLowerCase()}!`);
-      loadAppointments(); loadStats();
+      showNotif(`Appointment status updated to ${status}`);
+      loadAppointments();
     } catch (e) { showNotif(e.message, "error"); }
+  };
+
+  const deleteAppointment = async (aptId) => {
+    try {
+      const res = await fetch(`${API_BASE}/appointments/${aptId}`, {
+        method: "DELETE",
+        headers: authHeaders
+      });
+      if (!res.ok) throw new Error("Delete failed");
+      showNotif("Cancelled appointment deleted successfully.", "success");
+      loadAppointments();
+    } catch (err) {
+      showNotif(err.message || "Failed to delete appointment", "error");
+    }
   };
 
   // ── HOSPITAL ASSOCIATION MANAGEMENT ───────────────────────────
@@ -432,13 +452,40 @@ export default function DoctorDashboard() {
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {todayApts.sort((a, b) => a.time_slot.localeCompare(b.time_slot)).map(apt => {
                   const sc = apt.status === "Confirmed" ? "#10B981" : apt.status === "Pending" ? "#F59E0B" : "#EF4444";
+                  const payColor = apt.payment_status === "Paid" ? "#059669" : apt.payment_status === "Cash at Clinic" ? "#2563EB" : "#D97706";
                   return (
                     <div key={apt.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", background: "#F8FAFC", borderRadius: 10, border: "1px solid #E2E8F0" }}>
                       <div>
                         <span style={{ color: "#0F172A", fontWeight: 600, fontSize: 13 }}>{apt.patient_name || "Patient"}</span>
-                        <span style={{ color: "#94A3B8", fontSize: 12, marginLeft: 10 }}>{apt.time_slot}</span>
+                        <span style={{ color: "#94A3B8", fontSize: 12, marginLeft: 10 }}>⏰ {apt.time_slot}</span>
+                        <span style={{ fontSize: 10.5, fontWeight: 700, marginLeft: 10, color: payColor, background: payColor + "14", border: `1px solid ${payColor}30`, padding: "1px 7px", borderRadius: 100 }}>
+                          💳 {apt.payment_status || "Paid"}
+                        </span>
                       </div>
-                      <span style={{ color: sc, background: sc + "14", border: `1px solid ${sc}30`, fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999 }}>{apt.status}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <button
+                          onClick={() => initiateCall({
+                            callerRole: "Doctor",
+                            callerName: profile?.name || "Doctor",
+                            recipientName: apt.patient_name || "Patient",
+                            doctor: { name: profile?.name || "Doctor" },
+                            appointment: apt
+                          })}
+                          style={{ padding: "4px 10px", fontSize: 11, fontWeight: 700, background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                        >
+                          <Video size={11} /> Start Call
+                        </button>
+                        <button
+                          onClick={() => openChat({
+                            doctor: { name: profile?.name || "Doctor" },
+                            appointment: apt
+                          })}
+                          style={{ padding: "4px 10px", fontSize: 11, fontWeight: 700, background: "rgba(139,92,246,0.12)", color: "#7C3AED", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}
+                        >
+                          <MessageSquare size={11} /> Message
+                        </button>
+                        <span style={{ color: sc, background: sc + "14", border: `1px solid ${sc}30`, fontSize: 11, fontWeight: 700, padding: "2px 10px", borderRadius: 999 }}>{apt.status}</span>
+                      </div>
                     </div>
                   );
                 })}
@@ -515,14 +562,38 @@ export default function DoctorDashboard() {
                         </td>
                         <td>
                           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                            <button
+                              onClick={() => initiateCall({
+                                callerRole: "Doctor",
+                                callerName: profile?.name || "Doctor",
+                                recipientName: apt.patient_name || "Patient",
+                                doctor: { name: profile?.name || "Doctor" },
+                                appointment: apt
+                              })}
+                              style={{ padding: "4px 10px", fontSize: 11, background: "linear-gradient(135deg, #2563EB, #1D4ED8)", border: "none", color: "#FFF", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}
+                            >
+                              <Video size={11} /> Start Call
+                            </button>
+                            <button
+                              onClick={() => openChat({
+                                doctor: { name: profile?.name || "Doctor" },
+                                appointment: apt
+                              })}
+                              style={{ padding: "4px 10px", fontSize: 11, background: "rgba(139,92,246,0.12)", border: "1px solid rgba(139,92,246,0.3)", color: "#7C3AED", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 4 }}
+                            >
+                              <MessageSquare size={11} /> Direct Chat
+                            </button>
                             <button onClick={() => handleOpenSlotModal(apt)} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(37,99,235,0.08)", border: "1px solid rgba(37,99,235,0.25)", color: "#2563EB", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>
-                              ⏰ Confirm / Assign Slot
+                              ⏰ Assign Slot
                             </button>
                             {apt.status === "Pending" && (
                               <button onClick={() => updateAptStatus(apt.id, "Cancelled")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", color: "#EF4444", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✕ Reject</button>
                             )}
                             {apt.status === "Confirmed" && (
                               <button onClick={() => updateAptStatus(apt.id, "Completed")} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.25)", color: "#7C3AED", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>✓ Complete</button>
+                            )}
+                            {apt.status === "Cancelled" && (
+                              <button onClick={() => deleteAppointment(apt.id)} style={{ padding: "4px 10px", fontSize: 11, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626", borderRadius: 6, cursor: "pointer", fontWeight: 700, fontFamily: "inherit" }}>🗑️ Delete</button>
                             )}
                           </div>
                         </td>
@@ -706,7 +777,30 @@ export default function DoctorDashboard() {
                     <span>📊 {patient.appointment_count} visits</span>
                     <span>📅 Last: {patient.last_visit || "—"}</span>
                   </div>
-                  {patient.phone && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 8 }}>📞 {patient.phone}</div>}
+                  {patient.phone && <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6 }}>📞 {patient.phone}</div>}
+                  <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                    <button
+                      onClick={() => initiateCall({
+                        callerRole: "Doctor",
+                        callerName: profile?.name || "Doctor",
+                        recipientName: patient.name,
+                        doctor: { name: profile?.name || "Doctor" },
+                        appointment: { patient_name: patient.name, id: patient.id }
+                      })}
+                      style={{ flex: 1, padding: "6px 10px", fontSize: 11, fontWeight: 700, background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF", border: "none", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+                    >
+                      <Video size={11} /> Call Patient
+                    </button>
+                    <button
+                      onClick={() => openChat({
+                        doctor: { name: profile?.name || "Doctor" },
+                        appointment: { patient_name: patient.name, id: patient.id }
+                      })}
+                      style={{ flex: 1, padding: "6px 10px", fontSize: 11, fontWeight: 700, background: "rgba(139,92,246,0.12)", color: "#7C3AED", border: "1px solid rgba(139,92,246,0.3)", borderRadius: 6, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}
+                    >
+                      <MessageSquare size={11} /> Message
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -977,6 +1071,24 @@ export default function DoctorDashboard() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* ── TELEHEALTH LIVE VIDEO CONSULTATION MODAL ──────────── */}
+      {activeDocVideoApt && (
+        <VideoCallModal
+          doctor={{ name: profile?.name || "Dr. Specialist" }}
+          appointment={activeDocVideoApt}
+          onClose={() => setActiveDocVideoApt(null)}
+        />
+      )}
+
+      {/* ── DIRECT PATIENT CHAT & SMS MODAL ───────────────────── */}
+      {activeDocChatApt && (
+        <DoctorDirectChatModal
+          doctor={{ name: profile?.name || "Dr. Specialist" }}
+          appointment={activeDocChatApt}
+          onClose={() => setActiveDocChatApt(null)}
+        />
       )}
 
     </div>

@@ -474,8 +474,8 @@ export default function HospitalDashboard() {
               </div>
             ) : (
               <div style={DS.tableWrapper()}>
-                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr", padding: "12px 20px", background: T.surfaceAlt, borderBottom: `1px solid ${T.border}`, gap: 12 }}>
-                  {["PATIENT", "DOCTOR", "DATE", "TIME", "STATUS"].map((h, i) => (
+                <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 1fr", padding: "12px 20px", background: T.surfaceAlt, borderBottom: `1px solid ${T.border}`, gap: 12 }}>
+                  {["PATIENT", "DOCTOR", "DATE", "TIME", "PAYMENT", "STATUS"].map((h, i) => (
                     <div key={i} style={{ fontSize: 11, color: T.textMuted, fontWeight: 700, letterSpacing: "0.04em" }}>{h}</div>
                   ))}
                 </div>
@@ -483,7 +483,7 @@ export default function HospitalDashboard() {
                   <div style={{ padding: "40px", textAlign: "center", color: T.textMuted }}>No appointments found.</div>
                 ) : filteredApts.map((apt, i) => (
                   <div key={apt.id} style={{
-                    display: "grid", gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr",
+                    display: "grid", gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 1fr",
                     padding: "14px 20px",
                     borderBottom: i < filteredApts.length - 1 ? `1px solid ${T.surfaceAlt}` : "none",
                     gap: 12, alignItems: "center"
@@ -492,6 +492,9 @@ export default function HospitalDashboard() {
                     <span style={{ fontSize: 13, color: T.textSecondary }}>{apt.doctor_name || "—"}</span>
                     <span style={{ fontSize: 13, color: T.primary }}>{apt.date}</span>
                     <span style={{ fontSize: 12, color: T.textMuted, fontFamily: "monospace" }}>{apt.time_slot}</span>
+                    <span style={DS.badge(apt.payment_status === "Paid" ? "green" : apt.payment_status === "Cash at Clinic" ? "blue" : "amber")}>
+                      💳 {apt.payment_status || "Paid"}
+                    </span>
                     <span style={DS.badge(apt.status === "Confirmed" ? "green" : apt.status === "Pending" ? "amber" : apt.status === "Cancelled" ? "red" : "purple")}>
                       {apt.status}
                     </span>

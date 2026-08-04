@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { API_BASE } from "../api/client";
 
+import PaymentFailureModal from "./PaymentFailureModal";
+
 export default function AppointmentPaymentModal({ doctor, appointmentData, onClose, onConfirmBooking }) {
   const [paymentMethod, setPaymentMethod] = useState("upi"); // "upi" | "card" | "netbanking" | "cash"
   const [upiId, setUpiId] = useState("");
@@ -22,6 +24,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
   const [selectedBank, setSelectedBank] = useState("HDFC Bank");
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [showFailureModal, setShowFailureModal] = useState(false);
 
   const fee = doctor?.consultation_fee || doctor?.fee || 500;
   const platformFee = 0;
@@ -106,6 +109,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
                 booking_type: "appointment",
                 booking_payload: {
                   doctor_id: doctor?.id || doctor?._id || "650000000000000000000001",
+                  doctor_name: doctor?.name ? (doctor.name.startsWith("Dr.") ? doctor.name : `Dr. ${doctor.name}`) : "Dr. Specialist",
                   hospital_id: doctor?.hospital_id || null,
                   date: appointmentData?.date,
                   time_slot: appointmentData?.time_slot,
@@ -131,7 +135,9 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
             });
           } catch (err) {
             setIsProcessing(false);
-            setErrorMsg(err.message || "Cryptographic signature verification failed.");
+            const msg = err.message || "Cryptographic signature verification failed.";
+            setErrorMsg(msg);
+            setShowFailureModal(true);
           }
         },
         modal: {
@@ -153,16 +159,21 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
         const rzp = new window.Razorpay(options);
         rzp.on('payment.failed', function (resp) {
           setIsProcessing(false);
-          setErrorMsg(`Payment Failed: ${resp.error.description || "Transaction declined"}`);
+          const msg = `Payment Failed: ${resp.error?.description || "Transaction declined by bank"}`;
+          setErrorMsg(msg);
+          setShowFailureModal(true);
         });
         rzp.open();
       } else {
-        // Fallback if Razorpay script is blocked
-        throw new Error("Razorpay Checkout SDK script not loaded. Please check internet connection.");
+        // Fallback if Razorpay SDK fails to open
+        setIsProcessing(false);
+        setErrorMsg("Razorpay Payment Gateway unreachable. You can retry online or pay at clinic.");
+        setShowFailureModal(true);
       }
     } catch (err) {
       setIsProcessing(false);
       setErrorMsg(err.message || "Failed to initialize Razorpay checkout.");
+      setShowFailureModal(true);
     }
   };
 
@@ -519,6 +530,31 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
           </button>
         </div>
       </div>
+
+      {showFailureModal && (
+        <PaymentFailureModal
+          errorReason={errorMsg}
+          doctor={doctor}
+          appointmentData={appointmentData}
+          onRetry={() => {
+            setShowFailureModal(false);
+            handlePayAndBook();
+          }}
+          onSwitchToCash={() => {
+            setShowFailureModal(false);
+            setPaymentMethod("cash");
+            setTimeout(() => {
+              onConfirmBooking({
+                payment_method: "CASH",
+                payment_status: "Cash at Clinic",
+                amount: totalAmount,
+                transaction_id: `CASH-${Date.now()}`,
+              });
+            }, 300);
+          }}
+          onClose={() => setShowFailureModal(false)}
+        />
+      )}
     </div>
   );
 }

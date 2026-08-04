@@ -228,10 +228,32 @@ async def verify_payment_and_confirm(
                 detail="This time slot was taken during checkout. Please choose another slot."
             )
 
+        supplied_doc_name = payload.get("doctor_name")
+        if supplied_doc_name and supplied_doc_name != "Doctor Specialist":
+            raw_doc_name = supplied_doc_name
+        else:
+            raw_doc_name = "Doctor Specialist"
+            try:
+                if doctor_id and len(str(doctor_id)) == 24:
+                    doc_user = await db["users"].find_one({"_id": ObjectId(doctor_id)})
+                    if doc_user:
+                        raw_doc_name = doc_user.get("name", raw_doc_name)
+            except Exception:
+                pass
+
+        doctor_name = raw_doc_name if raw_doc_name.startswith("Dr.") else f"Dr. {raw_doc_name}"
+        doctor_specialty = payload.get("doctor_specialty") or payload.get("specialty") or "General Physician"
+        hospital_name = payload.get("hospital_name") or payload.get("hospital") or "Sehat-Sathi Care Clinic"
+        patient_name = payload.get("patient_name") or current_user.get("name") or "Patient"
+
         new_apt = {
             "patient_id": user_id,
+            "patient_name": patient_name,
             "doctor_id": doctor_id,
+            "doctor_name": doctor_name,
+            "doctor_specialty": doctor_specialty,
             "hospital_id": payload.get("hospital_id"),
+            "hospital_name": hospital_name,
             "date": date_str,
             "time_slot": slot_str,
             "status": "Confirmed",
@@ -253,24 +275,15 @@ async def verify_payment_and_confirm(
         tax_amt = round(base_amt * 0.18, 2)
         total_amt = round(base_amt + tax_amt, 2)
 
-        doctor_name = "Doctor Specialist"
-        try:
-            doc_user = await db["users"].find_one({"_id": ObjectId(doctor_id)})
-            if doc_user:
-                doctor_name = doc_user.get("name", "Doctor Specialist")
-        except Exception:
-            pass
-
-        patient_name = current_user.get("name") or "Patient"
-
         created_invoice_doc = {
             "invoice_number": inv_number,
+            "appointment_id": created_booking_id,
             "user_id": user_id,
             "patient_name": patient_name,
             "patient_id": f"PAT-{(user_id[:6]).upper()}",
-            "doctor_name": doctor_name if doctor_name.startswith("Dr.") else f"Dr. {doctor_name}",
-            "doctor_specialization": payload.get("doctor_specialty") or "General Physician",
-            "hospital_name": payload.get("hospital_name") or "Sehat-Sathi Care Clinic",
+            "doctor_name": doctor_name,
+            "doctor_specialization": doctor_specialty,
+            "hospital_name": hospital_name,
             "service_name": "Doctor Consultation & Health Guidance",
             "base_amount": base_amt,
             "tax_rate": 18.0,

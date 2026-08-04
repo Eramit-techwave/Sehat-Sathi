@@ -4,8 +4,11 @@
  * Receives all state as props — no internal API calls.
  */
 import { useState } from "react";
-import { Calendar, Loader2, ChevronLeft, Clock, CheckCircle2, XCircle, RefreshCw, FileText } from "lucide-react";
+import { Calendar, Loader2, ChevronLeft, Clock, CheckCircle2, XCircle, RefreshCw, FileText, Video, MessageSquare, Trash2 } from "lucide-react";
 import PaymentInvoiceModal from "../../components/PaymentInvoiceModal";
+import VideoCallModal from "../../components/VideoCallModal";
+import DoctorDirectChatModal from "../../components/DoctorDirectChatModal";
+import { useTelehealthBridge } from "../../context/TelehealthBridgeContext";
 
 const STATUS_CONFIG = {
   Confirmed:  { bg: "var(--green-light)",  color: "var(--green)",   border: "var(--green-border)",  label: "Confirmed",  dot: "🟢" },
@@ -24,12 +27,24 @@ export default function AppointmentsModule({
   onBack,
   onReschedule,
   onCancel,
+  onDelete,
 }) {
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const inputStyle = {
-    width: "100%", background: "var(--surface)", border: "1px solid var(--border-strong)",
-    borderRadius: "var(--radius-md)", padding: "10px 13px", color: "var(--text)",
-    fontSize: 14, outline: "none", fontFamily: "inherit",
+  const [activeTab, setActiveTab] = useState("active");
+
+  const activeApts = appointments.filter(a => a.status !== "Cancelled" && a.status !== "Completed");
+  const completedApts = appointments.filter(a => a.status === "Completed");
+  const cancelledApts = appointments.filter(a => a.status === "Cancelled");
+
+  const displayList = activeTab === "active"
+    ? activeApts
+    : activeTab === "completed"
+    ? completedApts
+    : cancelledApts;
+
+  const handleClearAllCancelled = () => {
+    if (window.confirm("Are you sure you want to clear all cancelled appointment slots?")) {
+      cancelledApts.forEach(apt => onDelete && onDelete(apt.id || apt._id || apt.appointment_id));
+    }
   };
 
   return (
@@ -39,31 +54,89 @@ export default function AppointmentsModule({
         <ChevronLeft size={14} /> Back to Dashboard
       </button>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, flexWrap: "wrap", gap: 12 }}>
         <div>
           <h2 className="serif" style={{ fontSize: 28, color: "var(--text)", margin: 0 }}>📅 My Appointments</h2>
           <p style={{ color: "var(--text-muted)", fontSize: 14, margin: "6px 0 0" }}>
-            {appointments.length} appointment{appointments.length !== 1 ? "s" : ""} · {appointments.filter(a => a.status !== "Cancelled" && a.status !== "Completed").length} active
+            {appointments.length} total appointment{appointments.length !== 1 ? "s" : ""}
           </p>
         </div>
+
+        {activeTab === "cancelled" && cancelledApts.length > 0 && (
+          <button
+            onClick={handleClearAllCancelled}
+            style={{
+              padding: "8px 16px", background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(239,68,68,0.3)", color: "#DC2626",
+              borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: "pointer",
+              display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
+            }}
+          >
+            <Trash2 size={13} /> Clear All Cancelled Slots
+          </button>
+        )}
       </div>
 
-      <div style={{ height: 1, background: "var(--border)", margin: "20px 0 24px" }} />
+      {/* ── SEPARATE TABS FOR UNCLUTTERED UX ─────────────────────────── */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 10, overflowX: "auto" }}>
+        <button
+          onClick={() => setActiveTab("active")}
+          style={{
+            padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            background: activeTab === "active" ? "linear-gradient(135deg, #2563EB, #1D4ED8)" : "var(--surface-alt)",
+            color: activeTab === "active" ? "#FFF" : "var(--text-secondary)",
+            border: activeTab === "active" ? "none" : "1px solid var(--border)",
+            display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
+          }}
+        >
+          🟢 Active Appointments ({activeApts.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("completed")}
+          style={{
+            padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            background: activeTab === "completed" ? "linear-gradient(135deg, #059669, #10B981)" : "var(--surface-alt)",
+            color: activeTab === "completed" ? "#FFF" : "var(--text-secondary)",
+            border: activeTab === "completed" ? "none" : "1px solid var(--border)",
+            display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
+          }}
+        >
+          ✅ Completed ({completedApts.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab("cancelled")}
+          style={{
+            padding: "8px 16px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer",
+            background: activeTab === "cancelled" ? "linear-gradient(135deg, #DC2626, #B91C1C)" : "var(--surface-alt)",
+            color: activeTab === "cancelled" ? "#FFF" : "var(--text-secondary)",
+            border: activeTab === "cancelled" ? "none" : "1px solid var(--border)",
+            display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit"
+          }}
+        >
+          ❌ Cancelled Slots ({cancelledApts.length})
+        </button>
+      </div>
 
       {loading ? (
         <div style={{ textAlign: "center", padding: "60px 20px" }}>
           <Loader2 size={32} className="animate-spin" style={{ color: "var(--primary)", margin: "0 auto 12px", display: "block" }} />
           <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Loading your appointments…</p>
         </div>
-      ) : appointments.length === 0 ? (
+      ) : displayList.length === 0 ? (
         <div style={{ textAlign: "center", padding: "60px 20px", background: "var(--surface)", borderRadius: "var(--radius-lg)", border: "1px solid var(--border)" }}>
           <Calendar size={40} style={{ margin: "0 auto 16px", display: "block", color: "var(--text-muted)", opacity: 0.4 }} />
-          <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>No appointments yet.</p>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, margin: "6px 0 0" }}>Go to <strong>Find Doctors</strong> to book one.</p>
+          <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
+            {activeTab === "active" ? "No active appointments currently." : activeTab === "completed" ? "No completed consultations." : "No cancelled slots in history."}
+          </p>
+          {activeTab === "active" && (
+            <p style={{ color: "var(--text-muted)", fontSize: 13, margin: "6px 0 0" }}>Go to <strong>Find Doctors</strong> to book one.</p>
+          )}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {appointments.map(apt => {
+          {displayList.map(apt => {
             const statusCfg = STATUS_CONFIG[apt.status] || STATUS_CONFIG.Pending;
             return (
               <div key={apt.id} style={{
@@ -74,7 +147,7 @@ export default function AppointmentsModule({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 12 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: "var(--text)", marginBottom: 4 }}>
-                      Dr. {apt.doctor_name || apt.doctor_id?.slice(-6)}
+                      {apt.doctor_name ? (apt.doctor_name.startsWith("Dr.") ? apt.doctor_name : `Dr. ${apt.doctor_name}`) : "Dr. Health Specialist"}
                     </div>
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                       <span style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 5 }}>
@@ -117,10 +190,10 @@ export default function AppointmentsModule({
                   <button
                     onClick={() => setSelectedInvoice({
                       invoice_number: `INV-2026-${(apt.id || "8924").slice(-5)}`,
-                      patient_name: "Patient",
+                      patient_name: apt.patient_name || "Patient",
                       doctor_name: apt.doctor_name || "Dr. Specialist",
-                      doctor_specialization: "Consultant Physician",
-                      hospital_name: "Sehat-Sathi Partnered Clinic",
+                      doctor_specialization: apt.doctor_specialty || "Consultant Physician",
+                      hospital_name: apt.hospital_name || "Sehat-Sathi Partnered Clinic",
                       service_name: "Doctor Consultation & Health Guidance",
                       base_amount: apt.amount || 500,
                       tax_amount: Math.round((apt.amount || 500) * 0.18),
@@ -140,6 +213,44 @@ export default function AppointmentsModule({
                   >
                     <FileText size={12} /> View Invoice Slip
                   </button>
+
+                  {apt.status !== "Cancelled" && (
+                    <>
+                      <button
+                        onClick={() => initiateCall({
+                          callerRole: "Patient",
+                          callerName: apt.patient_name || "Patient",
+                          recipientName: apt.doctor_name || "Doctor",
+                          doctor: { name: apt.doctor_name || "Doctor" },
+                          appointment: apt
+                        })}
+                        style={{
+                          padding: "8px 14px", background: "linear-gradient(135deg, #2563EB, #1D4ED8)",
+                          border: "none", color: "#FFFFFF",
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                          boxShadow: "0 4px 12px rgba(37,99,235,0.2)"
+                        }}
+                      >
+                        <Video size={13} /> Start Video Call
+                      </button>
+
+                      <button
+                        onClick={() => openChat({
+                          doctor: { name: apt.doctor_name || "Doctor" },
+                          appointment: apt
+                        })}
+                        style={{
+                          padding: "8px 14px", background: "rgba(139,92,246,0.12)",
+                          border: "1px solid rgba(139,92,246,0.3)", color: "#7C3AED",
+                          borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                          display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                        }}
+                      >
+                        <MessageSquare size={13} /> Direct SMS / Chat
+                      </button>
+                    </>
+                  )}
 
                   {apt.status !== "Cancelled" && apt.status !== "Completed" && (
                     <>
@@ -166,6 +277,21 @@ export default function AppointmentsModule({
                         <XCircle size={11} /> Cancel
                       </button>
                     </>
+                  )}
+
+                  {apt.status === "Cancelled" && (
+                    <button
+                      onClick={() => onDelete && onDelete(apt.id || apt._id || apt.appointment_id)}
+                      style={{
+                        padding: "8px 14px", background: "rgba(239, 68, 68, 0.12)",
+                        border: "1px solid rgba(239, 68, 68, 0.3)", color: "#DC2626",
+                        borderRadius: "var(--radius-md)", fontSize: 12, fontWeight: 700, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 6, fontFamily: "inherit",
+                        boxShadow: "0 2px 8px rgba(220,38,38,0.15)"
+                      }}
+                    >
+                      <Trash2 size={13} /> Delete Appointment
+                    </button>
                   )}
                 </div>
 
@@ -216,6 +342,24 @@ export default function AppointmentsModule({
         <PaymentInvoiceModal
           invoice={selectedInvoice}
           onClose={() => setSelectedInvoice(null)}
+        />
+      )}
+
+      {/* ── TELEHEALTH LIVE VIDEO CALL MODAL ─────────────────── */}
+      {activeVideoApt && (
+        <VideoCallModal
+          doctor={{ name: activeVideoApt.doctor_name || "Dr. Specialist" }}
+          appointment={activeVideoApt}
+          onClose={() => setActiveVideoApt(null)}
+        />
+      )}
+
+      {/* ── DIRECT DOCTOR CHAT & SMS MODAL ──────────────────── */}
+      {activeChatApt && (
+        <DoctorDirectChatModal
+          doctor={{ name: activeChatApt.doctor_name || "Dr. Specialist" }}
+          appointment={activeChatApt}
+          onClose={() => setActiveChatApt(null)}
         />
       )}
     </div>

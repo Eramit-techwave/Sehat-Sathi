@@ -5,6 +5,7 @@ import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
+import { TelehealthBridgeProvider } from './context/TelehealthBridgeContext.jsx'
 import { keepServerAwake } from './utils/keepAlive.js'
 import './index.css'
 
@@ -17,7 +18,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider>
         <LanguageProvider>
           <AuthProvider>
-            <App />
+            <TelehealthBridgeProvider>
+              <App />
+            </TelehealthBridgeProvider>
           </AuthProvider>
         </LanguageProvider>
       </ThemeProvider>

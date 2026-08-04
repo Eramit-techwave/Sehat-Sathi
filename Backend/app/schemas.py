@@ -53,7 +53,11 @@ class PasswordResetConfirm(BaseModel):
 # 📅 APPOINTMENTS
 class AppointmentCreate(BaseModel):
     doctor_id: str
+    doctor_name: Optional[str] = Field(None, description="Doctor full name")
+    doctor_specialty: Optional[str] = Field(None, description="Doctor specialization")
     hospital_id: Optional[str] = None
+    hospital_name: Optional[str] = Field(None, description="Hospital or clinic name")
+    patient_name: Optional[str] = Field(None, description="Patient full name")
     date: str = Field(..., description="YYYY-MM-DD format")
     time_slot: str = Field(..., description="HH:MM AM/PM format")
     reason: Optional[str] = Field(None, description="Reason for appointment")
