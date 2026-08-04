@@ -27,13 +27,21 @@ export default function PaymentInvoiceModal({ invoice, onClose }) {
   const doctorSpec = invoice.doctor_specialization || "General Physician";
   const hospitalName = invoice.hospital_name || "Sehat-Sathi Partnered Clinic";
   const serviceName = invoice.service_name || "Doctor Consultation & Health Assessment";
+  
+  const isRoomBooking = !!(invoice.room_type || (serviceName && (serviceName.toLowerCase().includes("room") || serviceName.toLowerCase().includes("bed"))));
+  const roomType = invoice.room_type || "Deluxe Private AC Room";
+  const roomNumber = invoice.room_number || `Room #${Math.floor(100 + Math.random() * 800)} (Bed-${Math.floor(1 + Math.random() * 12)})`;
+  const admissionDate = invoice.admission_date || new Date().toISOString().split("T")[0];
+  const durationDays = invoice.duration_days || 3;
+  const attendantName = invoice.attendant_name || "Emergency Contact";
+  const contactPhone = invoice.contact_phone || invoice.phone || "+91 9876543210";
 
   const baseAmount = invoice.base_amount || invoice.amount || 500;
   const taxAmount = invoice.tax_amount || Math.round(baseAmount * 0.18);
   const discount = invoice.discount || 0;
   const totalAmount = invoice.total_amount || (baseAmount + taxAmount - discount);
   const paymentMethod = (invoice.payment_method || "UPI").toUpperCase();
-  const isPaid = invoice.payment_status !== "Cash at Clinic";
+  const isPaid = invoice.payment_status !== "Cash at Clinic" && invoice.payment_status !== "Pay at Hospital";
   const refCode = invoice.reference_number || invoice.transaction_id || `SS-PAY-${Math.floor(100000 + Math.random() * 900000)}`;
 
   const handlePrint = () => {
@@ -54,7 +62,7 @@ export default function PaymentInvoiceModal({ invoice, onClose }) {
         className="invoice-slip-container"
         onClick={e => e.stopPropagation()}
         style={{
-          width: "100%", maxWidth: 640, background: "#FFFFFF",
+          width: "100%", maxWidth: 680, background: "#FFFFFF",
           borderRadius: 24, overflow: "hidden",
           boxShadow: "0 25px 70px rgba(0,0,0,0.3)",
           animation: "fadeScale 0.25s ease",
@@ -65,7 +73,7 @@ export default function PaymentInvoiceModal({ invoice, onClose }) {
         <div className="no-print" style={{ background: "#0F172A", padding: "14px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", color: "#FFF" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700 }}>
             <FileText size={18} style={{ color: "#38BDF8" }} />
-            <span>Official Payment Receipt</span>
+            <span>{isRoomBooking ? "Official Hospital Admission Slip & Invoice" : "Official Payment Receipt"}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button onClick={handlePrint} style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)", color: "#FFF", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
@@ -97,8 +105,8 @@ export default function PaymentInvoiceModal({ invoice, onClose }) {
             </div>
 
             <div style={{ textAlign: "right" }}>
-              <div style={{ display: "inline-block", background: "rgba(16,185,129,0.12)", border: "2px solid #10B981", color: "#047857", padding: "4px 16px", borderRadius: 100, fontSize: 13, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>
-                ✓ {isPaid ? "PAID" : "CASH AT CLINIC"}
+              <div style={{ display: "inline-block", background: isPaid ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)", border: `2px solid ${isPaid ? "#10B981" : "#F59E0B"}`, color: isPaid ? "#047857" : "#B45309", padding: "4px 16px", borderRadius: 100, fontSize: 13, fontWeight: 800, letterSpacing: "0.05em", marginBottom: 6 }}>
+                ✓ {isPaid ? "PAID" : "PAY AT HOSPITAL"}
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#0F172A" }}>{invNumber}</div>
               <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>{invDate}</div>
@@ -106,20 +114,58 @@ export default function PaymentInvoiceModal({ invoice, onClose }) {
           </div>
 
           {/* Details Grid: Patient & Doctor/Hospital */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 14, padding: 16, marginBottom: 24 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 14, padding: 16, marginBottom: 20 }}>
             <div>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>PATIENT DETAILS</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{patientName}</div>
               <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>Patient ID: <strong style={{ color: "#2563EB" }}>{patientId}</strong></div>
+              <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>📞 Phone: <strong>{contactPhone}</strong></div>
             </div>
 
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>DOCTOR & CLINIC</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{doctorName}</div>
-              <div style={{ fontSize: 11, color: "#059669", fontWeight: 600, marginTop: 1 }}>{doctorSpec}</div>
-              <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>🏥 {hospitalName}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                {isRoomBooking ? "HOSPITAL ADMISSION FACILITY" : "DOCTOR & CLINIC"}
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "#0F172A" }}>{hospitalName}</div>
+              {!isRoomBooking && <div style={{ fontSize: 11, color: "#059669", fontWeight: 600, marginTop: 1 }}>{doctorName} ({doctorSpec})</div>}
+              {isRoomBooking && <div style={{ fontSize: 11, color: "#2563EB", fontWeight: 700, marginTop: 2 }}>🛏️ {roomType}</div>}
             </div>
           </div>
+
+          {/* HOSPITAL ROOM ADMISSION EXTRA FILE DETAILS */}
+          {isRoomBooking && (
+            <div style={{ background: "rgba(37,99,235,0.04)", border: "1px solid rgba(37,99,235,0.2)", borderRadius: 14, padding: "14px 16px", marginBottom: 20 }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#1E3A8A", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <Bed size={14} style={{ color: "#2563EB" }} /> HOSPITAL ADMISSION & ROOM TICKET DETAILS
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, fontSize: 11 }}>
+                <div>
+                  <span style={{ color: "#64748B" }}>Assigned Room & Bed:</span>
+                  <div style={{ fontWeight: 800, color: "#0F172A", marginTop: 2 }}>{roomNumber}</div>
+                </div>
+                <div>
+                  <span style={{ color: "#64748B" }}>Admission Date:</span>
+                  <div style={{ fontWeight: 800, color: "#0F172A", marginTop: 2 }}>{admissionDate}</div>
+                </div>
+                <div>
+                  <span style={{ color: "#64748B" }}>Stay Duration:</span>
+                  <div style={{ fontWeight: 800, color: "#059669", marginTop: 2 }}>{durationDays} Days</div>
+                </div>
+                <div>
+                  <span style={{ color: "#64748B" }}>Check-In / Out Time:</span>
+                  <div style={{ fontWeight: 700, color: "#0F172A", marginTop: 2 }}>11:00 AM / 10:00 AM</div>
+                </div>
+                <div>
+                  <span style={{ color: "#64748B" }}>Emergency Attendant:</span>
+                  <div style={{ fontWeight: 700, color: "#0F172A", marginTop: 2 }}>{attendantName}</div>
+                </div>
+                <div>
+                  <span style={{ color: "#64748B" }}>Admission Status:</span>
+                  <div style={{ fontWeight: 800, color: "#2563EB", marginTop: 2 }}>CONFIRMED</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Financial Item Breakdown Table */}
           <div style={{ marginBottom: 24 }}>

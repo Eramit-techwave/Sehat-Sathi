@@ -30,6 +30,16 @@ export default function AppointmentsModule({
   onDelete,
 }) {
   const [activeTab, setActiveTab] = useState("active");
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [activeVideoApt, setActiveVideoApt] = useState(null);
+  const [activeChatApt, setActiveChatApt] = useState(null);
+  const { initiateCall = () => {}, openChat = () => {} } = useTelehealthBridge() || {};
+
+  const inputStyle = {
+    width: "100%", padding: "8px 12px", borderRadius: 8,
+    border: "1px solid var(--border)", background: "var(--surface)",
+    color: "var(--text)", fontSize: 13, outline: "none", fontFamily: "inherit"
+  };
 
   const activeApts = appointments.filter(a => a.status !== "Cancelled" && a.status !== "Completed");
   const completedApts = appointments.filter(a => a.status === "Completed");
@@ -306,8 +316,8 @@ export default function AppointmentsModule({
                       <label style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: 4 }}>NEW DATE</label>
                       <input
                         type="date" required
-                        value={rescheduleForm.new_date}
-                        onChange={e => setRescheduleForm({ ...rescheduleForm, new_date: e.target.value })}
+                        value={rescheduleForm?.new_date || ""}
+                        onChange={e => setRescheduleForm && setRescheduleForm({ ...(rescheduleForm || {}), new_date: e.target.value })}
                         min={new Date().toISOString().split("T")[0]}
                         style={inputStyle}
                       />
@@ -316,8 +326,8 @@ export default function AppointmentsModule({
                       <label style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 700, display: "block", marginBottom: 4 }}>NEW TIME SLOT</label>
                       <input
                         type="text" required placeholder="10:00 AM"
-                        value={rescheduleForm.new_time_slot}
-                        onChange={e => setRescheduleForm({ ...rescheduleForm, new_time_slot: e.target.value })}
+                        value={rescheduleForm?.new_time_slot || ""}
+                        onChange={e => setRescheduleForm && setRescheduleForm({ ...(rescheduleForm || {}), new_time_slot: e.target.value })}
                         style={inputStyle}
                       />
                     </div>
