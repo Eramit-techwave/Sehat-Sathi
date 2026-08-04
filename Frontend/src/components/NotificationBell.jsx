@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, CheckCheck, X, Clock } from "lucide-react";
 
-const API = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE as API } from "../api/client";
 
 const TYPE_CONFIG = {
   appointment_booked: { icon: "📅", color: "#60a5fa", bg: "rgba(96,165,250,0.1)" },
@@ -46,8 +46,8 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
-  const token = localStorage.getItem("sehat_sathi_token");
-  const headers = { Authorization: `Bearer ${token}` };
+  const token = localStorage.getItem("sehat_sathi_token") || localStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const fetchCount = useCallback(async () => {
     if (!token) return;
@@ -56,6 +56,8 @@ export default function NotificationBell() {
       if (res.ok) {
         const data = await res.json();
         setUnreadCount(data.unread_count || 0);
+      } else if (res.status === 401) {
+        setUnreadCount(0);
       }
     } catch (e) { /* silent */ }
   }, [token]);

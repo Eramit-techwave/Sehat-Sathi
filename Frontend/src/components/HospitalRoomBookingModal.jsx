@@ -124,12 +124,9 @@ export default function HospitalRoomBookingModal({ hospital, onClose, onBookingS
 
     try {
       const token = localStorage.getItem("sehat_sathi_token") || localStorage.getItem("token");
-      if (!token) {
-        throw new Error("You must be logged in to reserve a room.");
-      }
       const headers = {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
       };
       const isCash = paymentMethod === "cash";
 

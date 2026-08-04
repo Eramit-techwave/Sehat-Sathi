@@ -8,16 +8,24 @@ from app.config import settings
 
 security = HTTPBearer()
 
-# 🔒 Hashing configuration context (Bcrypt algorithm)
+import bcrypt
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # 1. Plain text password ko hash (encrypt) karne ke liye function
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    pwd_bytes = password.encode('utf-8')
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pwd_bytes, salt).decode('utf-8')
 
 # 2. Login ke waqt check karne ke liye ki password sahi hai ya nahi
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        if isinstance(hashed_password, str) and (hashed_password.startswith("$2a$") or hashed_password.startswith("$2b$")):
+            return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        return False
 
 # 3. Successful Authentication ke baad secure access token banane ke liye function
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

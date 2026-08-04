@@ -2,27 +2,49 @@ import { createContext, useContext, useState, useEffect } from "react";
 import { signInWithPopup, sendPasswordResetEmail } from "firebase/auth";
 import { auth, googleProvider } from "../firebase";
 
+import { API_BASE } from "../api/client";
+
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const API_BASE_URL = "https://sehat-sathi-ce58.onrender.com";
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem("sehat_sathi_user");
+      const storedToken = localStorage.getItem("sehat_sathi_token");
+      if (storedUser && storedToken) {
+        return JSON.parse(storedUser);
+      }
+    } catch (e) {
+      localStorage.removeItem("sehat_sathi_user");
+      localStorage.removeItem("sehat_sathi_token");
+    }
+    return null;
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("sehat_sathi_user");
     const storedToken = localStorage.getItem("sehat_sathi_token");
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Failed to parse stored user", e);
-        localStorage.removeItem("sehat_sathi_user");
-        localStorage.removeItem("sehat_sathi_token");
-      }
+
+    // Background non-blocking session validation
+    if (storedToken) {
+      fetch(`${API_BASE}/users/profile`, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      }).then(res => {
+        if (res.ok) {
+          return res.json().then(data => {
+            setUser(data);
+            localStorage.setItem("sehat_sathi_user", JSON.stringify(data));
+          });
+        } else if (res.status === 401) {
+          console.warn("[AUTH] Session token invalid/expired. Logging out.");
+          localStorage.removeItem("sehat_sathi_token");
+          localStorage.removeItem("sehat_sathi_user");
+          setUser(null);
+        }
+      }).catch(() => {
+        // Retain local session if server is starting or network offline
+      });
     }
-    setLoading(false);
   }, []);
 
   // Email + Password Login
@@ -45,7 +67,7 @@ export const AuthProvider = ({ children }) => {
       if (medical_reg_number) payload.medical_reg_number = medical_reg_number;
       if (registration_number) payload.registration_number = registration_number;
 
-      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
+      const response = await fetch(`${API_BASE}/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -65,7 +87,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginNode = async (email, password) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -90,7 +112,7 @@ export const AuthProvider = ({ children }) => {
         email: firebaseUser.email,
         uid: firebaseUser.uid
       };
-      const response = await fetch(`${API_BASE_URL}/auth/google-login`, {
+      const response = await fetch(`${API_BASE}/auth/google-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(realGooglePayload),

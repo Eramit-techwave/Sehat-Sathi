@@ -3,7 +3,7 @@
  * Keep endpoint configuration and response handling out of UI components so
  * mobile clients can use the same resource contracts later.
  */
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://sehat-sathi-ce58.onrender.com";
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? "http://localhost:8000" : "https://sehat-sathi-ce58.onrender.com");
 
 export async function apiGet(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, options);

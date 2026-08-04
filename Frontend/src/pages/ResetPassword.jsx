@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Key, Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { API_BASE } from "../api/client";
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -23,7 +24,7 @@ export default function ResetPassword() {
 
     setLoading(true);
     try {
-      const response = await fetch("https://sehat-sathi-ce58.onrender.com/auth/reset-password", {
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, new_password: newPassword }),

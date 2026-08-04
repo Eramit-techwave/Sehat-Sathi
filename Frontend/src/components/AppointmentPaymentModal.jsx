@@ -54,13 +54,9 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
       let userObj = {};
       try { if (userStr) userObj = JSON.parse(userStr); } catch (e) {}
 
-      if (!token) {
-        throw new Error("You must be logged in as a Patient to book an appointment.");
-      }
-
       const authHeaders = {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
       };
 
       // 1. Create Razorpay Order via Backend POST /payments/create-order
@@ -81,6 +77,9 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
       });
 
       const orderData = await orderRes.json();
+      if (orderRes.status === 401) {
+        throw new Error("Your login session has expired. Please log out and log in again to proceed with checkout.");
+      }
       if (!orderRes.ok) throw new Error(orderData.detail || "Could not initialize Razorpay Order");
 
       // 2. Open Razorpay Checkout JS Popup

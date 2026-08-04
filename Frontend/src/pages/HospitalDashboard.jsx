@@ -9,7 +9,7 @@ import FloatingNotification from "../components/FloatingNotification";
 import DS from "../ui/design-system";
 import T from "../ui/tokens";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../api/client";
 
 export default function HospitalDashboard() {
   const { user, logout } = useAuth();

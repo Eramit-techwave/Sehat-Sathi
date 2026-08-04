@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Plus, Trash2, CheckCircle2, FileText, Clock, Search, AlertCircle, Loader2, ChevronRight, Pill } from "lucide-react";
 import FloatingNotification from "../../components/FloatingNotification";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../../api/client";
 
 // V2 Clean Healthcare Theme Tokens
 const C = {

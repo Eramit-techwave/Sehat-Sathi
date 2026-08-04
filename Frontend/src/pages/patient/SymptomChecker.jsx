@@ -13,7 +13,7 @@ import { ArrowLeft, Send, Bot, AlertTriangle, Stethoscope, ShieldCheck, FlaskCon
 import DS from "../../ui/design-system";
 import T from "../../ui/tokens";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../../api/client";
 
 const RISK_CONFIG = {
   low:       { label: "Low Risk",      color: T.green,  bg: T.greenLight,  border: T.greenBorder,  icon: "🟢" },

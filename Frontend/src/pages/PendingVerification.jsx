@@ -2,6 +2,8 @@ import { useAuth } from "../context/AuthContext";
 import { Clock, LogOut, Activity, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
+import { API_BASE } from "../api/client";
+
 export default function PendingVerification() {
   const { user, logout } = useAuth();
   const [checking, setChecking] = useState(false);
@@ -16,7 +18,7 @@ export default function PendingVerification() {
     setStatusMsg("");
     try {
       const token = localStorage.getItem("sehat_sathi_token");
-      const res = await fetch("https://sehat-sathi-ce58.onrender.com/auth/verification-status", {
+      const res = await fetch(`${API_BASE}/auth/verification-status`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();

@@ -31,7 +31,7 @@ import PaymentInvoiceModal from "../components/PaymentInvoiceModal";
 import EnhancedBloodModal from "../components/EnhancedBloodModal";
 import HospitalRoomBookingModal from "../components/HospitalRoomBookingModal";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../api/client";
 
 const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
@@ -69,8 +69,8 @@ export default function PatientDashboard() {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const { t } = useLanguage();
-  const token = localStorage.getItem("sehat_sathi_token");
-  const authHeaders = { "Authorization": `Bearer ${token}` };
+  const token = localStorage.getItem("sehat_sathi_token") || localStorage.getItem("token");
+  const authHeaders = token ? { "Authorization": `Bearer ${token}` } : {};
 
   // ── Translated nav (computed inside component so t() is reactive) ────────
   const SIDEBAR_NAV = [
@@ -155,6 +155,7 @@ export default function PatientDashboard() {
   // ── API CALLS ───────────────────────────────────────────────────────────
 
   const loadReports = async () => {
+    if (!token) return;
     try {
       const res = await fetch(`${API_BASE}/api/reports/my`, { headers: authHeaders });
       if (res.ok) {
@@ -164,6 +165,8 @@ export default function PatientDashboard() {
           const latest = data[0].analysis_data;
           if (latest.parameters_table?.length > 0) setExtractedData(transformAnalysis(latest));
         }
+      } else if (res.status === 401) {
+        logout();
       }
     } catch (e) { console.error("Load reports error", e); }
   };
@@ -184,25 +187,48 @@ export default function PatientDashboard() {
   };
 
   const loadAppointments = async () => {
+    if (!token) return;
     setAptsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/appointments/my`, { headers: authHeaders });
-      if (res.ok) setAppointments(await res.json());
+      if (res.ok) {
+        setAppointments(await res.json());
+      } else if (res.status === 401) {
+        logout();
+      }
     } catch (e) { console.error("Load apts error", e); }
     finally { setAptsLoading(false); }
   };
 
-  const fetchAvailableSlots = async (doctorId, date) => {
-    if (!doctorId || !date) return;
+  const DEFAULT_SLOTS = [
+    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
+    "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM",
+    "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM",
+    "05:00 PM", "05:30 PM"
+  ];
+
+  const fetchAvailableSlots = async (doc, date) => {
+    const docId = typeof doc === "object" ? (doc?.id || doc?._id || doc?.user_id) : doc;
+    const targetDate = date || new Date().toISOString().split("T")[0];
     setBookingSlotsLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/appointments/doctor/${doctorId}/slots?date=${date}`, { headers: authHeaders });
-      if (res.ok) {
-        const data = await res.json();
-        setBookingSlots(data.available_slots || []);
+      if (docId && docId !== "undefined") {
+        const res = await fetch(`${API_BASE}/appointments/doctor/${docId}/slots?date=${targetDate}`, { headers: authHeaders });
+        if (res.ok) {
+          const data = await res.json();
+          const slots = data.available_slots || [];
+          setBookingSlots(slots.length > 0 ? slots : DEFAULT_SLOTS);
+          setBookingSlotsLoading(false);
+          return;
+        }
       }
-    } catch (e) { console.error("Slots fetch error", e); setBookingSlots([]); }
-    finally { setBookingSlotsLoading(false); }
+      setBookingSlots(DEFAULT_SLOTS);
+    } catch (e) {
+      console.error("Slots fetch error", e);
+      setBookingSlots(DEFAULT_SLOTS);
+    } finally {
+      setBookingSlotsLoading(false);
+    }
   };
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -210,9 +236,10 @@ export default function PatientDashboard() {
   const [bloodModalMode, setBloodModalMode] = useState(null); // 'register' | 'request' | null
 
   const handleOpenBooking = (doctor) => {
+    const today = new Date().toISOString().split("T")[0];
     setBookingDoctor(doctor);
-    setBookingForm({ date: "", time_slot: "", reason: "" });
-    setBookingSlots([]);
+    setBookingForm({ date: today, time_slot: "", reason: "" });
+    fetchAvailableSlots(doctor, today);
   };
 
   const handleSubmitBooking = async (e) => {
@@ -226,6 +253,17 @@ export default function PatientDashboard() {
   const handleFinalBookingConfirm = async (paymentData) => {
     setBookingLoading(true);
     try {
+      // If Razorpay verification already booked the appointment server-side:
+      if (paymentData?.invoice) {
+        showNotif(`✅ Appointment booked with Dr. ${bookingDoctor?.name || 'Specialist'}! Official Receipt & Invoice generated.`);
+        setShowPaymentModal(false);
+        setBookingDoctor(null);
+        setActiveInvoice(paymentData.invoice);
+        loadAppointments();
+        setBookingLoading(false);
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/appointments/book`, {
         method: "POST",
         headers: { ...authHeaders, "Content-Type": "application/json" },
@@ -244,7 +282,7 @@ export default function PatientDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Booking failed");
 
-      // Generate Invoice record
+      // Generate Invoice record for Cash booking
       const invObj = {
         invoice_number: `INV-2026-${Math.floor(10000 + Math.random() * 90000)}`,
         patient_name: user?.name || "Patient",
@@ -257,8 +295,8 @@ export default function PatientDashboard() {
         tax_amount: Math.round((paymentData.amount || 500) * 0.18),
         discount: 0,
         total_amount: Math.round((paymentData.amount || 500) * 1.18),
-        payment_method: (paymentData.payment_method || "UPI").toUpperCase(),
-        payment_status: paymentData.payment_status || "Paid",
+        payment_method: (paymentData.payment_method || "CASH").toUpperCase(),
+        payment_status: paymentData.payment_status || "Cash at Clinic",
         reference_number: paymentData.transaction_id || `SS-PAY-${Date.now()}`,
         created_at: new Date().toISOString()
       };
@@ -1172,7 +1210,7 @@ export default function PatientDashboard() {
                       onChange={e => {
                         const newDate = e.target.value;
                         setBookingForm(prev => ({ ...prev, date: newDate, time_slot: "" }));
-                        fetchAvailableSlots(bookingDoctor.id, newDate);
+                        fetchAvailableSlots(bookingDoctor, newDate);
                       }}
                       style={{ width: "100%", background: "var(--surface-alt)", border: "1px solid var(--border-strong)", borderRadius: "var(--radius-md)", padding: "11px 14px", color: "var(--text)", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
                     />
@@ -1313,7 +1351,7 @@ function PatientPrescriptionView({ token }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("https://sehat-sathi-ce58.onrender.com/prescriptions/my", {
+    fetch(`${API_BASE}/prescriptions/my`, {
       headers: { "Authorization": `Bearer ${token}` }
     })
       .then(r => r.json())

@@ -14,7 +14,7 @@ import { inputStyle } from "../ui/theme";
 import Button from "../components/Button";
 
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../api/client";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const ALL_SLOTS = ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
   "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM", "03:00 PM", "03:30 PM",

@@ -9,7 +9,7 @@ import {
 import DS from "../ui/design-system";
 import T from "../ui/tokens";
 
-const API = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE as API } from "../api/client";
 
 function useAdminAPI() {
   const token = localStorage.getItem("sehat_sathi_token");
@@ -709,7 +709,7 @@ export default function AdminDashboard() {
                     }}>
                       <div style={DS.row(8)}>
                         {u.profile_photo_url ? (
-                          <img src={`https://sehat-sathi-ce58.onrender.com${u.profile_photo_url}`} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+                          <img src={`${API}${u.profile_photo_url}`} alt="" style={{ width: 32, height: 32, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
                         ) : (
                           <div style={DS.avatar(32, rc)}>
                             {(u.name || "?")[0].toUpperCase()}

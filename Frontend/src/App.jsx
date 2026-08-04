@@ -192,11 +192,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
-      if (user) navigate("/dashboard");
-      else navigate("/");
+    if (!loading && user && location.pathname === "/") {
+      navigate("/dashboard");
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, location.pathname, navigate]);
 
   // Intercept login/signup events — show T&C gate first
   const showTermsGate = useCallback((originalEvent) => {

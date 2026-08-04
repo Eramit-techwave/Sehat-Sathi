@@ -5,7 +5,7 @@ import {
   CheckCircle2, AlertCircle, Clock, Activity
 } from "lucide-react";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../../api/client";
 
 const C = {
   bg: "#F8FAFC",

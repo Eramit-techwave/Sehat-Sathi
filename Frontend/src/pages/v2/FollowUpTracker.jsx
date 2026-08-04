@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Bell, CheckCircle2, Clock, AlertCircle, Loader2, Stethoscope, Pill, FlaskConical, CalendarCheck } from "lucide-react";
 import FloatingNotification from "../../components/FloatingNotification";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../../api/client";
 
 const C = {
   bg: "#F8FAFC", surface: "#FFFFFF", border: "#E2E8F0",

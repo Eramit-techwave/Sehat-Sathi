@@ -8,7 +8,7 @@
  */
 import { useState, useCallback } from "react";
 
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../api/client";
 
 export function useAPI() {
   const [loading, setLoading] = useState(false);

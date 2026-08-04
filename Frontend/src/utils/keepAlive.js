@@ -2,7 +2,7 @@
  * keepAlive.js — Server ping utility to prevent Render.com free instance sleep
  * Sehat-Sathi | August 2026
  */
-const API_BASE = "https://sehat-sathi-ce58.onrender.com";
+import { API_BASE } from "../api/client";
 const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes in ms
 
 export function keepServerAwake() {
