@@ -23,7 +23,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import {
   Activity, FileText, Sparkles, Key, Heart, CheckCircle2,
-  Eye, EyeOff, Stethoscope, Clock, Droplet, Users,
+  Eye, EyeOff, Stethoscope, Clock, Droplet, Users, User, Zap, ShieldCheck,
   MapPin, Calendar, MessageSquare, Video, Headphones, Shield,
   TrendingUp, AlertCircle as AlertIcon, ArrowRight, Star, Bot,
 } from "lucide-react";
@@ -34,10 +34,10 @@ import Cinematic3DHealthcareExperience from "../components/Cinematic3DHealthcare
 // ─────────────────────────────────────────────────────────────────────────────
 
 const STATS = [
-  { label: "Patients Served",  value: "12,000+", icon: "👥",  color: "var(--primary)" },
-  { label: "Doctors Verified", value: "450+",    icon: "👨‍⚕️", color: "var(--green)"   },
-  { label: "Reports Analyzed", value: "35,000+", icon: "📊",  color: "#0EA5E9"        },
-  { label: "Hospitals Listed", value: "120+",    icon: "🏥",  color: "var(--amber)"   },
+  { label: "Patients Served", value: "12,000+", icon: "👥", color: "var(--primary)" },
+  { label: "Doctors Verified", value: "450+", icon: "👨‍⚕️", color: "var(--green)" },
+  { label: "Reports Analyzed", value: "35,000+", icon: "📊", color: "#0EA5E9" },
+  { label: "Hospitals Listed", value: "120+", icon: "🏥", color: "var(--amber)" },
 ];
 
 const FEATURES = [
@@ -113,26 +113,26 @@ const HOW_IT_WORKS = [
 ];
 
 const DOCTOR_FEATURES = [
-  { icon: <Video size={20} />,         label: "Video Consultation",  desc: "Face-to-face with specialists" },
-  { icon: <Headphones size={20} />,    label: "Audio Consultation",  desc: "Quick voice consultations" },
-  { icon: <MessageSquare size={20} />, label: "Chat Consultation",   desc: "Text-based medical advice" },
-  { icon: <Shield size={20} />,        label: "Verified Profiles",   desc: "Certified & experienced doctors" },
-  { icon: <Clock size={20} />,         label: "Instant Booking",     desc: "No waiting, book immediately" },
-  { icon: <TrendingUp size={20} />,    label: "Specialist Doctors",  desc: "Find doctors by specialty" },
+  { icon: <Video size={20} />, label: "Video Consultation", desc: "Face-to-face with specialists" },
+  { icon: <Headphones size={20} />, label: "Audio Consultation", desc: "Quick voice consultations" },
+  { icon: <MessageSquare size={20} />, label: "Chat Consultation", desc: "Text-based medical advice" },
+  { icon: <Shield size={20} />, label: "Verified Profiles", desc: "Certified & experienced doctors" },
+  { icon: <Clock size={20} />, label: "Instant Booking", desc: "No waiting, book immediately" },
+  { icon: <TrendingUp size={20} />, label: "Specialist Doctors", desc: "Find doctors by specialty" },
 ];
 
 const BLOOD_DONOR_INFO = [
-  { icon: <Users size={20} />,    title: "Register as Donor",  desc: "Help save lives in your community" },
-  { icon: <AlertIcon size={20} />,title: "Request Blood",      desc: "Find donors during emergencies"    },
-  { icon: <MapPin size={20} />,   title: "Search Donors",      desc: "Filter by location & blood group"  },
-  { icon: <Heart size={20} />,    title: "Emergency Support",  desc: "24/7 emergency blood access"       },
+  { icon: <Users size={20} />, title: "Register as Donor", desc: "Help save lives in your community" },
+  { icon: <AlertIcon size={20} />, title: "Request Blood", desc: "Find donors during emergencies" },
+  { icon: <MapPin size={20} />, title: "Search Donors", desc: "Filter by location & blood group" },
+  { icon: <Heart size={20} />, title: "Emergency Support", desc: "24/7 emergency blood access" },
 ];
 
 const APPOINTMENT_PROCESS = [
-  { step: "1", title: "Search Hospital", desc: "Find hospitals near you",        icon: "🏥"   },
-  { step: "2", title: "Choose Doctor",   desc: "Select your preferred doctor",   icon: "👨‍⚕️" },
-  { step: "3", title: "Pick Time Slot",  desc: "Choose a convenient time",       icon: "⏰"   },
-  { step: "4", title: "Book & Confirm",  desc: "Instant confirmation & details", icon: "✅"   },
+  { step: "1", title: "Search Hospital", desc: "Find hospitals near you", icon: "🏥" },
+  { step: "2", title: "Choose Doctor", desc: "Select your preferred doctor", icon: "👨‍⚕️" },
+  { step: "3", title: "Pick Time Slot", desc: "Choose a convenient time", icon: "⏰" },
+  { step: "4", title: "Book & Confirm", desc: "Instant confirmation & details", icon: "✅" },
 ];
 
 const HEALTH_DATA = {
@@ -190,32 +190,32 @@ const HEALTH_DATA = {
 const EASE = [0.16, 1, 0.3, 1];
 
 const fadeUp = {
-  hidden:  { opacity: 0, y: 36 },
+  hidden: { opacity: 0, y: 36 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.72, ease: EASE } },
 };
 
 const stagger = {
-  hidden:  {},
+  hidden: {},
   visible: { transition: { staggerChildren: 0.10 } },
 };
 
 const staggerFast = {
-  hidden:  {},
+  hidden: {},
   visible: { transition: { staggerChildren: 0.07 } },
 };
 
 const slideLeft = {
-  hidden:  { opacity: 0, x: -52 },
+  hidden: { opacity: 0, x: -52 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.75, ease: EASE } },
 };
 
 const slideRight = {
-  hidden:  { opacity: 0, x: 52 },
+  hidden: { opacity: 0, x: 52 },
   visible: { opacity: 1, x: 0, transition: { duration: 0.75, ease: EASE } },
 };
 
 const popIn = {
-  hidden:  { opacity: 0, scale: 0.87 },
+  hidden: { opacity: 0, scale: 0.87 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.52, ease: EASE } },
 };
 
@@ -256,7 +256,7 @@ function SectionLabel({ children, color = "var(--primary)" }) {
 }
 
 function SectionHead({ label, labelColor, title, subtitle, center = true }) {
-  const ref    = useRef(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-30px" });
   return (
     <motion.div
@@ -300,7 +300,7 @@ function SectionHead({ label, labelColor, title, subtitle, center = true }) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function FeatureCard({ feature, index }) {
-  const ref    = useRef(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-30px" });
   return (
     <motion.div
@@ -352,11 +352,11 @@ function StackedCard({ step, index, total, scrollYProgress }) {
 
   // Enter animation: each card slides up from below
   const enterStart = index === 0 ? 0 : Math.max(0, (index - 0.65) * span);
-  const enterEnd   = index === 0 ? 0 : index * span + span * 0.22;
+  const enterEnd = index === 0 ? 0 : index * span + span * 0.22;
 
   // Scale: previous cards shrink as next card arrives
   const scaleStart = index < total - 1 ? index * span + span * 0.22 : 0;
-  const scaleEnd   = index < total - 1 ? (index + 1) * span           : 0;
+  const scaleEnd = index < total - 1 ? (index + 1) * span : 0;
 
   const y = useTransform(
     scrollYProgress,
@@ -439,10 +439,10 @@ function StackedCard({ step, index, total, scrollYProgress }) {
 
 function HowItWorksStep({ step, index, inView }) {
   const ACCENT_MAP = [
-    { bg: "var(--primary-light)",  border: "var(--primary-border)",  color: "var(--primary)",  gradient: "linear-gradient(135deg,#2563EB,#6366F1)" },
-    { bg: "var(--purple-light)",   border: "var(--purple-border)",   color: "var(--purple)",   gradient: "linear-gradient(135deg,#7C3AED,#A78BFA)" },
-    { bg: "rgba(14,165,233,0.08)", border: "rgba(14,165,233,0.22)",  color: "#0EA5E9",         gradient: "linear-gradient(135deg,#0EA5E9,#38BDF8)" },
-    { bg: "var(--green-light)",    border: "var(--green-border)",    color: "var(--green)",    gradient: "linear-gradient(135deg,#10B981,#34D399)" },
+    { bg: "var(--primary-light)", border: "var(--primary-border)", color: "var(--primary)", gradient: "linear-gradient(135deg,#2563EB,#6366F1)" },
+    { bg: "var(--purple-light)", border: "var(--purple-border)", color: "var(--purple)", gradient: "linear-gradient(135deg,#7C3AED,#A78BFA)" },
+    { bg: "rgba(14,165,233,0.08)", border: "rgba(14,165,233,0.22)", color: "#0EA5E9", gradient: "linear-gradient(135deg,#0EA5E9,#38BDF8)" },
+    { bg: "var(--green-light)", border: "var(--green-border)", color: "var(--green)", gradient: "linear-gradient(135deg,#10B981,#34D399)" },
   ];
   const a = ACCENT_MAP[index];
 
@@ -524,7 +524,7 @@ function HowItWorksStep({ step, index, inView }) {
 }
 
 function HowItWorksSection() {
-  const ref    = useRef(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
@@ -581,7 +581,7 @@ function HowItWorksSection() {
                   <div style={{
                     display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                   }}>
-                    {[0,1,2].map(d => (
+                    {[0, 1, 2].map(d => (
                       <div key={d} style={{
                         width: 4, height: 4, borderRadius: "50%",
                         background: "var(--border-strong)",
@@ -670,26 +670,26 @@ export default function LandingPage() {
   const { loginNode, registerNode, loginWithGoogle, resetPassword } = useAuth();
 
   // ── Auth state ──────────────────────────────────────────────────────────────
-  const [authOpen,         setAuthOpen]         = useState(false);
-  const [authMode,         setAuthMode]         = useState("login");
-  const [email,            setEmail]            = useState("");
-  const [password,         setPassword]         = useState("");
-  const [name,             setName]             = useState("");
-  const [showPassword,     setShowPassword]     = useState(false);
-  const [selectedRole,     setSelectedRole]     = useState("Patient");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("Patient");
   const [medicalRegNumber, setMedicalRegNumber] = useState("");
-  const [signupPending,    setSignupPending]    = useState(false);
-  const [authError,          setAuthError]          = useState("");
-  const [authLoading,        setAuthLoading]        = useState(false);
-  const [tcAccepted,         setTcAccepted]         = useState(false);
-  const [registrationSuccess,setRegistrationSuccess]= useState(false);
-  const [registeredName,     setRegisteredName]     = useState("");
-  const [showTcModal,        setShowTcModal]        = useState(false);
+  const [signupPending, setSignupPending] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [tcAccepted, setTcAccepted] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredName, setRegisteredName] = useState("");
+  const [showTcModal, setShowTcModal] = useState(false);
 
   // ── Forgot password ─────────────────────────────────────────────────────────
-  const [forgotOpen,    setForgotOpen]    = useState(false);
-  const [forgotEmail,   setForgotEmail]   = useState("");
-  const [forgotStep,    setForgotStep]    = useState("input");
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStep, setForgotStep] = useState("input");
   const [forgotLoading, setForgotLoading] = useState(false);
 
   // ── Health tab ──────────────────────────────────────────────────────────────
@@ -700,12 +700,12 @@ export default function LandingPage() {
   // After acceptance, TermsGate fires trigger-login/signup-modal-direct here.
   useEffect(() => {
     // Post-acceptance direct opens (skip gate)
-    const openLoginDirect  = () => { setAuthMode("login");  setAuthOpen(true); setAuthError(""); };
+    const openLoginDirect = () => { setAuthMode("login"); setAuthOpen(true); setAuthError(""); };
     const openSignupDirect = () => { setAuthMode("signup"); setAuthOpen(true); setAuthError(""); };
-    window.addEventListener("trigger-login-modal-direct",  openLoginDirect);
+    window.addEventListener("trigger-login-modal-direct", openLoginDirect);
     window.addEventListener("trigger-signup-modal-direct", openSignupDirect);
     return () => {
-      window.removeEventListener("trigger-login-modal-direct",  openLoginDirect);
+      window.removeEventListener("trigger-login-modal-direct", openLoginDirect);
       window.removeEventListener("trigger-signup-modal-direct", openSignupDirect);
     };
   }, []);
@@ -739,6 +739,7 @@ export default function LandingPage() {
       if (res.success) { setAuthOpen(false); resetForm(); }
       else { setAuthError(res.error || "Invalid credentials"); }
     }
+
     setAuthLoading(false);
   };
 
@@ -750,8 +751,8 @@ export default function LandingPage() {
     setAuthLoading(false);
   };
 
-  const handleForgotOpen   = () => { setForgotEmail(""); setForgotStep("input"); setForgotLoading(false); setAuthOpen(false); setForgotOpen(true); };
-  const handleForgotClose  = () => { setForgotOpen(false); };
+  const handleForgotOpen = () => { setForgotEmail(""); setForgotStep("input"); setForgotLoading(false); setAuthOpen(false); setForgotOpen(true); };
+  const handleForgotClose = () => { setForgotOpen(false); };
   const handleForgotSubmit = async (e) => {
     e.preventDefault(); if (!forgotEmail.trim()) return;
     setForgotLoading(true);
@@ -764,146 +765,239 @@ export default function LandingPage() {
   const tab = HEALTH_DATA[activeTab];
 
   // ── Section scroll refs ─────────────────────────────────────────────────────
-  const heroRef   = useRef(null);
-  const statsRef  = useRef(null);
+  const heroRef = useRef(null);
+  const statsRef = useRef(null);
   const doctorRef = useRef(null);
-  const apptRef   = useRef(null);
-  const bloodRef  = useRef(null);
-  const ctaRef    = useRef(null);
+  const apptRef = useRef(null);
+  const bloodRef = useRef(null);
+  const ctaRef = useRef(null);
 
-  const heroInView   = useInView(heroRef,   { once: true });
-  const statsInView  = useInView(statsRef,  { once: true, margin: "-40px" });
+  const heroInView = useInView(heroRef, { once: true });
+  const statsInView = useInView(statsRef, { once: true, margin: "-40px" });
   const doctorInView = useInView(doctorRef, { once: true, margin: "-40px" });
-  const apptInView   = useInView(apptRef,   { once: true, margin: "-40px" });
-  const bloodInView  = useInView(bloodRef,  { once: true, margin: "-40px" });
-  const ctaInView    = useInView(ctaRef,    { once: true, margin: "-40px" });
+  const apptInView = useInView(apptRef, { once: true, margin: "-40px" });
+  const bloodInView = useInView(bloodRef, { once: true, margin: "-40px" });
+  const ctaInView = useInView(ctaRef, { once: true, margin: "-40px" });
+
+  // ── Auto-Typewriter & Hover Effect for Hero Headline ───────────────────────
+  const HERO_TEXT = "Healthcare, Simplified for Everyone";
+  const [typedHeadline, setTypedHeadline] = useState("");
+  const [typingComplete, setTypingComplete] = useState(false);
+
+  useEffect(() => {
+    let index = 0;
+    const timer = setInterval(() => {
+      if (index < HERO_TEXT.length) {
+        setTypedHeadline(HERO_TEXT.slice(0, index + 1));
+        index++;
+      } else {
+        setTypingComplete(true);
+        clearInterval(timer);
+      }
+    }, 40);
+    return () => clearInterval(timer);
+  }, []);
 
   // ── Hero parallax ───────────────────────────────────────────────────────────
-  const { scrollY }  = useScroll();
+  const { scrollY } = useScroll();
   const heroContentY = useTransform(scrollY, [0, 500], [0, -40]);
-  const heroBgY      = useTransform(scrollY, [0, 500], [0, -110]);
+  const heroBgY = useTransform(scrollY, [0, 500], [0, -110]);
 
   return (
     <div style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", width: "100%", overflowX: "clip" }}>
 
       {/* ════════════════════════════════════════════════════════════════
-          HERO
+          HERO — Simple & Clean Normal Layout (No Photo Background)
       ════════════════════════════════════════════════════════════════ */}
       <section
         id="hero"
-        style={{ position: "relative", overflow: "hidden", minHeight: "100vh", display: "flex", alignItems: "center", padding: "100px 6% 80px" }}
+        style={{
+          position: "relative", overflow: "hidden", minHeight: "82vh",
+          display: "flex", alignItems: "center", padding: "120px 6% 80px"
+        }}
       >
         {/* Parallax mesh */}
         <motion.div className="hero-mesh" style={{ y: heroBgY }} />
+
         {/* Ambient orbs */}
         <div className="hero-orb-green" />
         <div className="hero-orb-purple" />
 
         <motion.div
           ref={heroRef}
-          style={{ y: heroContentY, maxWidth: 1200, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}
+          style={{ y: heroContentY, maxWidth: 1040, margin: "0 auto", width: "100%", position: "relative", zIndex: 1 }}
         >
-          <div className="hero-grid">
+          <div style={{ maxWidth: 1020, margin: "0 auto", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
 
-            {/* ── Left: Headline + CTAs ── */}
+            {/* ── Center Column: Single-Line Headline + Description + CTAs + Trust Bar ── */}
             <motion.div
-              initial="hidden"
-              animate={heroInView ? "visible" : "hidden"}
+              initial="visible"
+              animate="visible"
               variants={stagger}
-              style={{ textAlign: "left" }}
+              style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}
             >
-              {/* AI badge */}
+              {/* Green Pill Badge */}
               <motion.div variants={fadeUp} style={{
                 display: "inline-flex", alignItems: "center", gap: 8,
-                background: "var(--primary-light)", border: "1px solid var(--primary-border)",
-                color: "var(--primary)", fontSize: 11, fontWeight: 700,
-                padding: "6px 18px", borderRadius: "var(--radius-full)",
-                marginBottom: 24, letterSpacing: "0.06em",
+                background: "rgba(16,185,129,0.14)", border: "1px solid rgba(16,185,129,0.35)",
+                color: "#10B981", fontSize: 12, fontWeight: 800,
+                padding: "8px 24px", borderRadius: "var(--radius-full)",
+                marginBottom: 24, letterSpacing: "0.06em", textTransform: "uppercase",
+                boxShadow: "0 4px 14px rgba(16,185,129,0.12)"
               }}>
-                <Sparkles size={12} /> SEHATSATHI PLATFORM v2.4
+                <Sparkles size={14} color="#10B981" /> AI-POWERED HEALTHCARE ECOSYSTEM
               </motion.div>
 
-              {/* H1 Headline */}
+              {/* Hero H1 Headline — Enlarged Size + Auto-Type reveal + Interactive Hover animation */}
               <motion.h1
                 variants={fadeUp}
                 className="serif"
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 style={{
-                  fontSize: "clamp(38px, 5.2vw, 68px)",
-                  lineHeight: 1.08, color: "var(--text)", letterSpacing: "-0.03em",
+                  fontSize: "clamp(34px, 5.2vw, 76px)",
+                  lineHeight: 1.08, color: "var(--text)", letterSpacing: "-0.04em", fontWeight: 900,
+                  textAlign: "center", cursor: "pointer", userSelect: "none"
                 }}
               >
-                India's AI-Powered <br />
-                <span className="shimmer-text">Healthcare Ecosystem</span>
+                {(() => {
+                  const greenWord = "Everyone";
+                  const greenIndex = HERO_TEXT.indexOf(greenWord);
+                  if (typedHeadline.length <= greenIndex) {
+                    return (
+                      <>
+                        {typedHeadline}
+                        {!typingComplete && (
+                          <motion.span
+                            animate={{ opacity: [1, 0, 1] }}
+                            transition={{ repeat: Infinity, duration: 0.6 }}
+                            style={{ color: "#10B981", marginLeft: 2 }}
+                          >
+                            |
+                          </motion.span>
+                        )}
+                      </>
+                    );
+                  }
+                  const normalPart = typedHeadline.slice(0, greenIndex);
+                  const greenPart = typedHeadline.slice(greenIndex);
+                  return (
+                    <>
+                      {normalPart}
+                      <motion.span
+                        whileHover={{ scale: 1.08, filter: "brightness(1.15)" }}
+                        style={{
+                          background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", display: "inline-block"
+                        }}
+                      >
+                        {greenPart}
+                      </motion.span>
+                      {!typingComplete && (
+                        <motion.span
+                          animate={{ opacity: [1, 0, 1] }}
+                          transition={{ repeat: Infinity, duration: 0.6 }}
+                          style={{ color: "#10B981", marginLeft: 2 }}
+                        >
+                          |
+                        </motion.span>
+                      )}
+                    </>
+                  );
+                })()}
               </motion.h1>
 
-              {/* Sub Heading */}
-              <motion.h3
-                variants={fadeUp}
-                style={{
-                  fontSize: "clamp(18px, 2.2vw, 24px)",
-                  fontWeight: 700, color: "var(--primary)",
-                  margin: "18px 0 12px", lineHeight: 1.4,
-                }}
-              >
-                From understanding your reports to connecting with trusted healthcare services — everything in one intelligent platform.
-              </motion.h3>
-
-              {/* Description */}
+              {/* Hero Description — Centered */}
               <motion.p
                 variants={fadeUp}
-                style={{ fontSize: 15.5, color: "var(--text-secondary)", maxWidth: 520, margin: "0 0 32px", lineHeight: 1.8 }}
+                style={{
+                  fontSize: "clamp(15px, 2vw, 18.5px)", color: "var(--text-secondary)",
+                  maxWidth: 680, margin: "22px auto 34px", lineHeight: 1.7, fontWeight: 600,
+                  textAlign: "center"
+                }}
               >
-                Get free AI medical report analysis, consult verified doctors, book hospital appointments, manage digital health records, find blood donors during emergencies, and take control of your healthcare journey with SehatSathi.
+                Book doctors, analyze reports with AI, access hospitals, find blood donors and manage your health – all in one secure platform.
               </motion.p>
 
-              {/* CTAs */}
-              <motion.div variants={fadeUp} style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+              {/* Action Buttons — Centered */}
+              <motion.div variants={fadeUp} style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", justifyContent: "center" }}>
                 <motion.button
                   className="btn-primary"
-                  style={{ fontSize: 15, padding: "15px 38px", borderRadius: "var(--radius-lg)" }}
+                  style={{
+                    fontSize: 16, fontWeight: 800, padding: "17px 38px", borderRadius: 16,
+                    background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                    boxShadow: "0 10px 30px rgba(16,185,129,0.38)", border: "none", color: "#FFFFFF",
+                    cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 9
+                  }}
                   onClick={() => openAuth("signup")}
-                  whileHover={{ scale: 1.03, boxShadow: "0 10px 36px rgba(37,99,235,0.40)" }}
+                  whileHover={{ scale: 1.03, boxShadow: "0 14px 38px rgba(16,185,129,0.48)" }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  Start for Free <ArrowRight size={16} />
+                  <FileText size={18} /> Analyze Report Free <ArrowRight size={17} />
                 </motion.button>
+
                 <motion.button
                   className="btn-ghost"
-                  style={{ fontSize: 15, padding: "15px 28px" }}
-                  onClick={() => openAuth("login")}
-                  whileHover={{ scale: 1.03 }}
+                  style={{
+                    fontSize: 16, fontWeight: 800, padding: "16px 32px", borderRadius: 16,
+                    background: "var(--surface)", border: "1.5px solid var(--border-strong)",
+                    color: "var(--text)", cursor: "pointer", boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
+                    display: "inline-flex", alignItems: "center", gap: 9
+                  }}
+                  onClick={() => {
+                    const el = document.getElementById("doctors");
+                    if (el) el.scrollIntoView({ behavior: "smooth" });
+                    else openAuth("signup");
+                  }}
+                  whileHover={{ scale: 1.03, borderColor: "#10B981", color: "#10B981" }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  Sign In
+                  <Calendar size={18} /> Book Appointment
                 </motion.button>
               </motion.div>
 
-              {/* Trust badges */}
-              <motion.div variants={fadeUp} style={{ marginTop: 26, display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-                {["No credit card", "HIPAA-safe storage", "Trusted by 12,000+ patients"].map((t, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--text-muted)" }}>
-                    <CheckCircle2 size={12} style={{ color: "var(--green)" }} /> {t}
+              {/* Trust Bar (Centered Feature Badges) */}
+              <motion.div variants={fadeUp} style={{
+                marginTop: 40, display: "flex", flexWrap: "wrap", justifyContent: "center",
+                gap: 14, maxWidth: 680
+              }}>
+                <div style={{
+                  background: "var(--surface)", border: "1.5px solid var(--border)",
+                  borderRadius: 16, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+                }}>
+                  <User size={20} color="#10B981" style={{ flexShrink: 0 }} />
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>No Credit Card</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>100% Free to Start</div>
                   </div>
-                ))}
+                </div>
+
+                <div style={{
+                  background: "var(--surface)", border: "1.5px solid var(--border)",
+                  borderRadius: 16, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+                }}>
+                  <Zap size={20} color="#10B981" style={{ flexShrink: 0 }} />
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>AI-Powered</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>Results in Seconds</div>
+                  </div>
+                </div>
+
+                <div style={{
+                  background: "var(--surface)", border: "1.5px solid var(--border)",
+                  borderRadius: 16, padding: "12px 18px", display: "flex", alignItems: "center", gap: 12,
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+                }}>
+                  <ShieldCheck size={20} color="#10B981" style={{ flexShrink: 0 }} />
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "var(--text)" }}>HIPAA-Safe</div>
+                    <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-muted)", marginTop: 2 }}>Data 100% Secure</div>
+                  </div>
+                </div>
               </motion.div>
-            </motion.div>
 
-            {/* ── Right: Interactive 3D Healthcare Experience ── */}
-            <motion.div
-              initial={{ opacity: 0, y: 44, scale: 0.96 }}
-              animate={heroInView ? { opacity: 1, y: 0, scale: 1 } : {}}
-              transition={{ delay: 0.22, duration: 0.88, ease: EASE }}
-              style={{ position: "relative" }}
-            >
-              {/* Outer ambient glow */}
-              <div style={{
-                position: "absolute", inset: -32,
-                background: "radial-gradient(ellipse at 55% 45%, rgba(37,99,235,0.18) 0%, rgba(16,185,129,0.10) 45%, transparent 70%)",
-                pointerEvents: "none", zIndex: 0,
-              }} />
-
-              {/* Cinematic 5-Scene 3D Storytelling Experience */}
-              <Cinematic3DHealthcareExperience />
             </motion.div>
           </div>
         </motion.div>
@@ -1245,7 +1339,7 @@ export default function LandingPage() {
           <h3 style={{ fontSize: 20, fontWeight: 700, color: "var(--text)", marginBottom: 8 }}>Search Blood Donors</h3>
           <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 22 }}>Filter donors by blood group, location, and availability</p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 26 }}>
-            {["O+","O-","A+","A-","B+","B-","AB+","AB-"].map((bg, i) => (
+            {["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"].map((bg, i) => (
               <BloodGroupBtn key={i} label={bg} onClick={() => openAuth("signup")} />
             ))}
           </div>
@@ -1316,7 +1410,7 @@ export default function LandingPage() {
             >
               <div className="health-grid" style={{ marginBottom: 16 }}>
                 {[
-                  { emoji: "🍏", label: "DIETARY GUIDANCE",   items: tab.diet },
+                  { emoji: "🍏", label: "DIETARY GUIDANCE", items: tab.diet },
                   { emoji: "💪", label: "EXERCISE FRAMEWORK", items: tab.exercise },
                 ].map((panel, pi) => (
                   <div key={pi} style={{
@@ -1497,10 +1591,10 @@ export default function LandingPage() {
               }}
             >
               {[
-                { value: "450+", label: "Verified Doctors",  color: "var(--primary)",  icon: "👨‍⚕️" },
-                { value: "12K+", label: "Active Patients",   color: "var(--green)",    icon: "🧬" },
-                { value: "40+",  label: "Cities Covered",    color: "#0EA5E9",          icon: "📍" },
-                { value: "99.4%","label": "AI Accuracy",      color: "var(--amber)",    icon: "⚡" },
+                { value: "450+", label: "Verified Doctors", color: "var(--primary)", icon: "👨‍⚕️" },
+                { value: "12K+", label: "Active Patients", color: "var(--green)", icon: "🧬" },
+                { value: "40+", label: "Cities Covered", color: "#0EA5E9", icon: "📍" },
+                { value: "99.4%", "label": "AI Accuracy", color: "var(--amber)", icon: "⚡" },
               ].map((s, i) => (
                 <motion.div
                   key={i}
@@ -1580,9 +1674,9 @@ export default function LandingPage() {
             </div>
 
             {[
-              { title: "Services",       links: [{ label: "AI Report Analysis", href: "#" }, { label: "Doctor Consultation", href: "#" }, { label: "Hospital Appointments", href: "#" }, { label: "Blood Donor Network", href: "#" }, { label: "Service Marketplace", href: "#" }] },
-              { title: "Company",        links: [{ label: "Our Mission", href: "#" }, { label: "Meet the Team", href: "#" }, { label: "Blog & Updates", href: "#" }, { label: "Press Kit", href: "#" }, { label: "Careers", href: "#" }] },
-              { title: "Legal & Support",links: [{ label: "Privacy Policy", href: "/legal?doc=privacy" }, { label: "Terms of Service", href: "/legal?doc=terms" }, { label: "Cookie Policy", href: "/legal?doc=cookie" }, { label: "Cookie Preferences ⚙️", isCookieAction: true }, { label: "Contact Support", href: "#" }, { label: "Security", href: "#" }] },
+              { title: "Services", links: [{ label: "AI Report Analysis", href: "#" }, { label: "Doctor Consultation", href: "#" }, { label: "Hospital Appointments", href: "#" }, { label: "Blood Donor Network", href: "#" }, { label: "Service Marketplace", href: "#" }] },
+              { title: "Company", links: [{ label: "Our Mission", href: "#" }, { label: "Meet the Team", href: "#" }, { label: "Blog & Updates", href: "#" }, { label: "Press Kit", href: "#" }, { label: "Careers", href: "#" }] },
+              { title: "Legal & Support", links: [{ label: "Privacy Policy", href: "/legal?doc=privacy" }, { label: "Terms of Service", href: "/legal?doc=terms" }, { label: "Cookie Policy", href: "/legal?doc=cookie" }, { label: "Cookie Preferences ⚙️", isCookieAction: true }, { label: "Contact Support", href: "#" }, { label: "Security", href: "#" }] },
             ].map((col, i) => (
               <div key={i}>
                 <h4 style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 16 }}>{col.title}</h4>
@@ -1688,7 +1782,7 @@ export default function LandingPage() {
 
               {/* Mode toggle */}
               <div style={{ display: "flex", background: "var(--surface-alt)", border: "1px solid var(--border)", borderRadius: 10, padding: 3, marginBottom: 18 }}>
-                {["login","signup"].map(m => (
+                {["login", "signup"].map(m => (
                   <button key={m} onClick={() => { setAuthMode(m); setAuthError(""); }}
                     style={{
                       flex: 1, padding: "8px 0", borderRadius: 7,
@@ -1814,10 +1908,10 @@ export default function LandingPage() {
                   onMouseLeave={e => e.currentTarget.style.background = "var(--surface-alt)"}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   Continue with Google
                 </button>
@@ -1917,7 +2011,7 @@ export default function LandingPage() {
               </p>
               <div style={{ background: "var(--surface-alt)", border: "1px solid var(--border)", borderRadius: 12, padding: "16px 18px", marginBottom: 22, textAlign: "left" }}>
                 <div style={{ fontSize: 11, color: "var(--primary)", fontWeight: 700, marginBottom: 10, textTransform: "uppercase" }}>What Happens Next</div>
-                {["Admin reviews your registration details","Your credentials are verified against records","You receive access notification once approved","You can then log in and set up your profile"].map((step, i) => (
+                {["Admin reviews your registration details", "Your credentials are verified against records", "You receive access notification once approved", "You can then log in and set up your profile"].map((step, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
                     <CheckCircle2 size={14} style={{ color: "var(--green)", flexShrink: 0 }} />
                     <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{step}</span>
