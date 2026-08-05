@@ -1572,9 +1572,9 @@ export default function LandingPage() {
             </div>
 
             {[
-              { title: "Services",       links: ["AI Report Analysis","Doctor Consultation","Hospital Appointments","Blood Donor Network","Service Marketplace"] },
-              { title: "Company",        links: ["Our Mission","Meet the Team","Blog & Updates","Press Kit","Careers"] },
-              { title: "Legal & Support",links: ["Privacy Policy","Terms of Service","Contact Support","FAQs","Security"] },
+              { title: "Services",       links: [{ label: "AI Report Analysis", href: "#" }, { label: "Doctor Consultation", href: "#" }, { label: "Hospital Appointments", href: "#" }, { label: "Blood Donor Network", href: "#" }, { label: "Service Marketplace", href: "#" }] },
+              { title: "Company",        links: [{ label: "Our Mission", href: "#" }, { label: "Meet the Team", href: "#" }, { label: "Blog & Updates", href: "#" }, { label: "Press Kit", href: "#" }, { label: "Careers", href: "#" }] },
+              { title: "Legal & Support",links: [{ label: "Privacy Policy", href: "/legal?doc=privacy" }, { label: "Terms of Service", href: "/legal?doc=terms" }, { label: "Cookie Policy", href: "/legal?doc=cookie" }, { label: "Cookie Preferences ⚙️", isCookieAction: true }, { label: "Contact Support", href: "#" }, { label: "Security", href: "#" }] },
             ].map((col, i) => (
               <div key={i}>
                 <h4 style={{ fontSize: 11, fontWeight: 700, color: "var(--text)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 16 }}>{col.title}</h4>
@@ -1588,12 +1588,32 @@ export default function LandingPage() {
                       >📋 Legal Hub (50 Documents)</a>
                     </li>
                   )}
-                  {col.links.map((link, j) => (
+                  {col.links.map((linkItem, j) => (
                     <li key={j}>
-                      <a href="#" style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", transition: "color 0.15s" }}
-                        onMouseEnter={e => e.target.style.color = "var(--primary)"}
-                        onMouseLeave={e => e.target.style.color = "var(--text-secondary)"}
-                      >{link}</a>
+                      {linkItem.isCookieAction ? (
+                        <button
+                          onClick={() => window.__openCookiePreferences ? window.__openCookiePreferences("customize") : null}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            fontSize: 13,
+                            color: "var(--primary)",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            transition: "color 0.15s",
+                          }}
+                          onMouseEnter={e => e.target.style.textDecoration = "underline"}
+                          onMouseLeave={e => e.target.style.textDecoration = "none"}
+                        >
+                          {linkItem.label}
+                        </button>
+                      ) : (
+                        <a href={linkItem.href || "#"} style={{ fontSize: 13, color: "var(--text-secondary)", textDecoration: "none", transition: "color 0.15s" }}
+                          onMouseEnter={e => e.target.style.color = "var(--primary)"}
+                          onMouseLeave={e => e.target.style.color = "var(--text-secondary)"}
+                        >{linkItem.label}</a>
+                      )}
                     </li>
                   ))}
                 </ul>

@@ -372,6 +372,11 @@ export default function TermsGate({ onAccept }) {
 // Helper: check if terms have been accepted (for external use)
 export function hasAcceptedTerms() {
   try {
+    const cookieConsent = localStorage.getItem("sehat_cookie_consent_v1");
+    if (cookieConsent) {
+      const parsedConsent = JSON.parse(cookieConsent);
+      if (parsedConsent.accepted === true) return true;
+    }
     const stored = localStorage.getItem(STORAGE_KEY);
     if (!stored) return false;
     const parsed = JSON.parse(stored);

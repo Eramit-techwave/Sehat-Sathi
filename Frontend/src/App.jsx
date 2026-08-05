@@ -6,6 +6,7 @@ import { useLanguage } from "./context/LanguageContext.jsx";
 import NotificationBell from "./components/NotificationBell.jsx";
 import LanguageSelector from "./components/LanguageSelector.jsx";
 import TermsGate from "./components/TermsGate.jsx";
+import CookieConsent from "./components/CookieConsent.jsx";
 import TranslateWidget from "./components/TranslateWidget.jsx";
 import {
   Activity, LogOut, Sun, Moon, Monitor, Menu, X,
@@ -399,6 +400,9 @@ export default function App() {
           }}
         />
       )}
+
+      {/* ── GLOBAL: Cookie Consent Banner ─────────────────────────────────── */}
+      <CookieConsent />
 
       {/* ── GLOBAL: Screen Translate Widget ───────────────────────────── */}
       <TranslateWidget />

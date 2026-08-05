@@ -96,11 +96,19 @@ export default function LegalHub() {
 
   const grouped = useMemo(() => groupDocs(FULL_DOCUMENT_REGISTRY), []);
 
-  // Initialize all groups expanded
+  // Initialize all groups expanded & read ?doc= URL parameter
   useEffect(() => {
     const initial = {};
     Object.keys(groupDocs(FULL_DOCUMENT_REGISTRY)).forEach(g => { initial[g] = true; });
     setExpandedGroups(initial);
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const docParam = params.get("doc");
+      if (docParam && FULL_DOCUMENT_REGISTRY.some(d => d.id === docParam)) {
+        setActiveDocId(docParam);
+      }
+    } catch {}
   }, []);
 
   const filteredRegistry = useMemo(() => {
