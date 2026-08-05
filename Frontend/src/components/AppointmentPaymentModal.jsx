@@ -223,7 +223,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
         {/* Header */}
         <div style={{
           padding: "20px 24px",
-          background: "linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)",
+          background: "linear-gradient(135deg, #059669 0%, #10B981 100%)",
           color: "#fff",
           display: "flex", alignItems: "center", justifyContent: "space-between",
           borderTopLeftRadius: 24, borderTopRightRadius: 24,
@@ -526,7 +526,7 @@ export default function AppointmentPaymentModal({ doctor, appointmentData, onClo
               width: "100%", padding: "14px", borderRadius: 14,
               background: paymentMethod === "cash"
                 ? "linear-gradient(135deg, #10B981, #059669)"
-                : "linear-gradient(135deg, #2563EB, #1D4ED8)",
+                : "linear-gradient(135deg, #10B981, #059669)",
               border: "none", color: "#fff",
               fontSize: 15, fontWeight: 700, cursor: isProcessing ? "wait" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,

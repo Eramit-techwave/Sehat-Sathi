@@ -319,7 +319,7 @@ export default function EmergencyServices({ onBack }) {
                   <button
                     onClick={() => setSelectedRoomHospital(h)}
                     style={{
-                      background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF",
+                      background: "linear-gradient(135deg, #10B981, #059669)", color: "#FFF",
                       border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 11, fontWeight: 700,
                       cursor: "pointer", display: "flex", alignItems: "center", gap: 4
                     }}

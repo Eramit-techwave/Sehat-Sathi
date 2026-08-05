@@ -117,7 +117,7 @@ export default function DoctorProfileModal({ doctor, onClose, onBook }) {
         }}
       >
         {/* Header Profile Hero */}
-        <div style={{ background: "linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%)", padding: "24px", color: "#FFF", position: "relative" }}>
+        <div style={{ background: "linear-gradient(135deg, #059669 0%, #10B981 100%)", padding: "24px", color: "#FFF", position: "relative" }}>
           <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, background: "rgba(255,255,255,0.15)", border: "none", color: "#FFF", borderRadius: 10, width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <X size={18} />
           </button>
@@ -175,8 +175,8 @@ export default function DoctorProfileModal({ doctor, onClose, onBook }) {
               style={{
                 padding: "14px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer",
                 background: "transparent", border: "none",
-                borderBottom: activeTab === t.id ? "3px solid #2563EB" : "3px solid transparent",
-                color: activeTab === t.id ? "#2563EB" : "#64748B"
+                borderBottom: activeTab === t.id ? "3px solid #10B981" : "3px solid transparent",
+                color: activeTab === t.id ? "#10B981" : "#64748B"
               }}
             >
               {t.label}
@@ -209,11 +209,60 @@ export default function DoctorProfileModal({ doctor, onClose, onBook }) {
                 </div>
               </div>
 
-              {googleMapsUrl && (
-                <a href={googleMapsUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "#2563EB", textDecoration: "none" }}>
-                  <MapPin size={14} /> Open Location in Google Maps ↗
-                </a>
-              )}
+              {/* Clinic Location & Google Maps Navigation Card */}
+              <div style={{
+                background: "var(--surface-alt, #F8FAFC)", border: "1px solid var(--border, #E2E8F0)",
+                borderRadius: 14, padding: "16px 18px", marginTop: 4
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#10B981", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6 }}>
+                    <MapPin size={14} color="#10B981" /> CLINIC / HOSPITAL LOCATION
+                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: "#ECFDF5", color: "#047857", padding: "2px 8px", borderRadius: 100, border: "1px solid #A7F3D0" }}>
+                    GPS Map Connected
+                  </span>
+                </div>
+
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text, #0F172A)", marginBottom: 4 }}>
+                  🏥 {hospitalAffiliation}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text-secondary, #475569)", marginBottom: 14, lineHeight: 1.4 }}>
+                  📍 {doctor.clinic_address || doctor.address || doctor.hospital_name || doctor.hospital || `${doctorName} Clinic`}, {doctor.city || "India"}
+                </div>
+
+                {/* Google Maps Action Buttons */}
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([doctor.clinic_address || doctor.address || hospitalAffiliation, doctor.city, "India"].filter(Boolean).join(", "))}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1, minWidth: 160, padding: "9px 14px", borderRadius: 10,
+                      background: "linear-gradient(135deg, #10B981 0%, #059669 100%)",
+                      color: "#FFFFFF", fontSize: 12, fontWeight: 800,
+                      textDecoration: "none", display: "inline-flex", alignItems: "center",
+                      justifyContent: "center", gap: 6, boxShadow: "0 4px 12px rgba(16,185,129,0.25)"
+                    }}
+                  >
+                    <Navigation size={14} /> Open in Google Maps ↗
+                  </a>
+
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent([doctor.clinic_address || doctor.address || hospitalAffiliation, doctor.city, "India"].filter(Boolean).join(", "))}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      flex: 1, minWidth: 160, padding: "9px 14px", borderRadius: 10,
+                      background: "var(--surface, #FFFFFF)", border: "1px solid var(--border-strong, #CBD5E1)",
+                      color: "var(--text, #0F172A)", fontSize: 12, fontWeight: 700,
+                      textDecoration: "none", display: "inline-flex", alignItems: "center",
+                      justifyContent: "center", gap: 6
+                    }}
+                  >
+                    🧭 Get Driving Directions
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 

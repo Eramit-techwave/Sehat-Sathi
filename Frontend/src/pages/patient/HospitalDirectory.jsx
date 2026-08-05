@@ -415,7 +415,7 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
               <a href={`tel:${selectedHospital.phone}`} style={{ background: "#F1F5F9", color: "#0F172A", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                 <Phone size={14} /> {selectedHospital.phone}
               </a>
-              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedHospital.address)}`} target="_blank" rel="noreferrer" style={{ background: "linear-gradient(135deg,#2563EB,#1D4ED8)", color: "#FFF", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+              <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(selectedHospital.address)}`} target="_blank" rel="noreferrer" style={{ background: "linear-gradient(135deg,#10B981,#059669)", color: "#FFF", padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
                 <Navigation size={14} /> Open Navigation in Google Maps ↗
               </a>
             </div>
@@ -459,10 +459,10 @@ export default function HospitalDirectory({ onBack, onBookDoctor }) {
                   setSelectedHospital(null);
                 }}
                 style={{
-                  background: "linear-gradient(135deg, #2563EB, #1D4ED8)", color: "#FFF",
+                  background: "linear-gradient(135deg, #10B981, #059669)", color: "#FFF",
                   border: "none", padding: "10px 18px", borderRadius: 12, fontSize: 13, fontWeight: 800,
                   cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
-                  boxShadow: "0 4px 14px rgba(37,99,235,0.4)"
+                  boxShadow: "0 4px 14px rgba(16,185,129,0.4)"
                 }}
               >
                 🛏️ Reserve Room & Bed Now

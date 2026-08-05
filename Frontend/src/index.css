@@ -28,11 +28,11 @@
   --border:       #E2E8F0;
   --border-strong:#CBD5E1;
 
-  /* Brand */
-  --primary:      #2563EB;
-  --primary-dark: #1D4ED8;
-  --primary-light:rgba(37,99,235,0.08);
-  --primary-border:rgba(37,99,235,0.20);
+  /* Brand - Green Theme */
+  --primary:      #10B981;
+  --primary-dark: #059669;
+  --primary-light:rgba(16,185,129,0.08);
+  --primary-border:rgba(16,185,129,0.20);
 
   /* Semantic */
   --green:        #10B981;
@@ -56,7 +56,7 @@
   --shadow-sm:  0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
   --shadow-md:  0 4px 16px rgba(0,0,0,0.07);
   --shadow-lg:  0 12px 40px rgba(0,0,0,0.10);
-  --shadow-blue:0 4px 14px rgba(37,99,235,0.20);
+  --shadow-blue:0 4px 14px rgba(16,185,129,0.20);
 
   /* Radii */
   --radius-sm:  8px;
@@ -79,55 +79,55 @@
   --sidebar-collapsed-w: 0px;
 }
 
-/* ── CSS Variables — Dark ───────────────────────────────────────── */
+/* ── CSS Variables — Rich Charcoal & Emerald Dark Theme ────────── */
 html.dark {
-  --bg:           #0C1017;
-  --surface:      #151C28;
-  --surface-alt:  #1A2236;
-  --surface-hover:#1E2A3E;
-  --card:         #151C28;
-  --card-alt:     #0C1017;
+  --bg:           #121824;
+  --surface:      #1E2638;
+  --surface-alt:  #2A364F;
+  --surface-hover:#344463;
+  --card:         #1E2638;
+  --card-alt:     #121824;
 
-  --text:         #F1F5F9;
-  --text-secondary:#94A3B8;
-  --text-muted:   #64748B;
-  --text-disabled:#334155;
-  --muted:        #64748B;
+  --text:         #F8FAFC;
+  --text-secondary:#E2E8F0;
+  --text-muted:   #94A3B8;
+  --text-disabled:#64748B;
+  --muted:        #94A3B8;
 
-  --border:       #1E2D45;
-  --border-strong:#2D3E57;
+  --border:       #2E3C56;
+  --border-strong:#425475;
 
-  --primary:      #3B82F6;
-  --primary-dark: #2563EB;
-  --primary-light:rgba(59,130,246,0.12);
-  --primary-border:rgba(59,130,246,0.25);
+  --primary:      #10B981;
+  --primary-dark: #059669;
+  --primary-light:rgba(16,185,129,0.15);
+  --primary-border:rgba(16,185,129,0.30);
 
   --green:        #10B981;
-  --green-light:  rgba(16,185,129,0.12);
-  --green-border: rgba(16,185,129,0.25);
+  --green-light:  rgba(16,185,129,0.15);
+  --green-border: rgba(16,185,129,0.30);
   --amber:        #F59E0B;
-  --amber-light:  rgba(245,158,11,0.12);
-  --amber-border: rgba(245,158,11,0.25);
+  --amber-light:  rgba(245,158,11,0.15);
+  --amber-border: rgba(245,158,11,0.30);
   --red:          #F87171;
   --danger:       #F87171;
-  --red-light:    rgba(248,113,113,0.12);
-  --red-border:   rgba(248,113,113,0.25);
+  --red-light:    rgba(248,113,113,0.15);
+  --red-border:   rgba(248,113,113,0.30);
   --purple:       #A78BFA;
-  --purple-light: rgba(167,139,250,0.12);
-  --purple-border:rgba(167,139,250,0.25);
-  --cyan:        #38BDF8;
-  --cyan-light:  rgba(56,189,248,0.12);
-  --cyan-border: rgba(56,189,248,0.25);
+  --purple-light: rgba(167,139,250,0.15);
+  --purple-border:rgba(167,139,250,0.30);
+  --cyan:         #38BDF8;
+  --cyan-light:   rgba(56,189,248,0.15);
+  --cyan-border:  rgba(56,189,248,0.30);
 
-  --shadow-sm:  0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md:  0 4px 20px rgba(0,0,0,0.4);
-  --shadow-lg:  0 12px 50px rgba(0,0,0,0.5);
-  --shadow-blue:0 4px 14px rgba(59,130,246,0.25);
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.32);
+  --shadow-lg:  0 12px 45px rgba(0,0,0,0.40);
+  --shadow-blue:0 4px 14px rgba(16,185,129,0.25);
 
-  --nav-bg:     rgba(12,16,23,0.90);
-  --nav-border: rgba(30,45,69,0.9);
+  --nav-bg:     rgba(18,24,36,0.92);
+  --nav-border: rgba(46,60,86,0.8);
 
-  --sidebar-bg:   #0F1623;
+  --sidebar-bg:   #121824;
 }
 
 /* ── Reset ──────────────────────────────────────────────────────── */
@@ -248,7 +248,7 @@ button, input, select, textarea { font-family: inherit; }
   transition: all 0.2s cubic-bezier(0.16,1,0.3,1);
   white-space: nowrap;
 }
-.btn-primary:hover  { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.32); }
+.btn-primary:hover  { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.32); }
 .btn-primary:active { transform: scale(0.98); box-shadow: none; }
 .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
 

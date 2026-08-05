@@ -250,7 +250,7 @@ export default function App() {
         <div style={{ textAlign: "center" }}>
           <div style={{
             width: 48, height: 48, borderRadius: 14,
-            background: "linear-gradient(135deg,#2563EB,#1D4ED8)",
+            background: "linear-gradient(135deg,#10B981,#059669)",
             display: "flex", alignItems: "center", justifyContent: "center",
             margin: "0 auto 14px",
             boxShadow: "0 8px 24px rgba(37,99,235,0.3)",
@@ -280,7 +280,7 @@ export default function App() {
           >
             <div style={{
               width: 36, height: 36, borderRadius: 10,
-              background: "linear-gradient(135deg,#2563EB,#1D4ED8)",
+              background: "linear-gradient(135deg,#10B981,#059669)",
               display: "flex", alignItems: "center", justifyContent: "center",
               boxShadow: "0 4px 12px rgba(37,99,235,0.30)",
             }}>

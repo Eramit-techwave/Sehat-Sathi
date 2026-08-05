@@ -78,10 +78,17 @@ export default function DoctorCard({ doctor, onBook, compact = false }) {
 
       {/* Info Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: T.textSecondary, display: "flex", alignItems: "center", gap: 5 }}>
-          <MapPin size={11} style={{ color: T.textMuted, flexShrink: 0 }} />
-          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hospital} {city ? `(${city})` : ""}</span>
-        </div>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([doctor.clinic_address || hospital, city, "India"].filter(Boolean).join(", "))}`}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Open Location in Google Maps"
+          style={{ fontSize: 12, color: "#10B981", fontWeight: 700, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}
+        >
+          <MapPin size={11} style={{ color: "#10B981", flexShrink: 0 }} />
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{hospital} {city ? `(${city})` : ""} ↗</span>
+        </a>
         <div style={{ fontSize: 12, color: T.textSecondary, display: "flex", alignItems: "center", gap: 5 }}>
           <Clock size={11} style={{ color: T.textMuted }} />
           {experience_years} yrs experience
@@ -138,9 +145,21 @@ export default function DoctorCard({ doctor, onBook, compact = false }) {
         >
           Book Consultation
         </button>
-        <button style={DS.btnGhost({ padding: "10px 14px", fontSize: 12 })}>
-          View Profile
-        </button>
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([doctor.clinic_address || hospital, city, "India"].filter(Boolean).join(", "))}`}
+          target="_blank"
+          rel="noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title="Open Location on Google Maps"
+          style={{
+            padding: "10px 14px", borderRadius: 10, fontSize: 12, fontWeight: 700,
+            background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)",
+            color: "#059669", textDecoration: "none", display: "inline-flex",
+            alignItems: "center", gap: 4
+          }}
+        >
+          <MapPin size={12} /> Map ↗
+        </a>
       </div>
     </div>
   );

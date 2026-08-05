@@ -19,7 +19,7 @@ const ROLE_COLORS = {
   Admin:    { bg: "rgba(139,92,246,0.1)",  color: "#7C3AED", border: "rgba(139,92,246,0.25)" },
   Doctor:   { bg: "rgba(16,185,129,0.1)",  color: "#059669", border: "rgba(16,185,129,0.25)" },
   Hospital: { bg: "rgba(245,158,11,0.1)",  color: "#D97706", border: "rgba(245,158,11,0.25)" },
-  Patient:  { bg: "rgba(37,99,235,0.1)",   color: "#2563EB", border: "rgba(37,99,235,0.25)"  },
+  Patient:  { bg: "rgba(16,185,129,0.1)",   color: "#10B981", border: "rgba(16,185,129,0.25)"  },
 };
 
 // ── Tiny theme toggle ────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export default function DashboardLayout({
         <div className="dash-sidebar-logo">
           <div style={{
             width: 32, height: 32, borderRadius: 9,
-            background: "linear-gradient(135deg,#2563EB,#1D4ED8)",
+            background: "linear-gradient(135deg,#10B981,#059669)",
             display: "flex", alignItems: "center", justifyContent: "center",
             boxShadow: "0 4px 12px rgba(37,99,235,0.30)", flexShrink: 0
           }}>

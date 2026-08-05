@@ -818,34 +818,42 @@ export default function LandingPage() {
                 background: "var(--primary-light)", border: "1px solid var(--primary-border)",
                 color: "var(--primary)", fontSize: 11, fontWeight: 700,
                 padding: "6px 18px", borderRadius: "var(--radius-full)",
-                marginBottom: 28, letterSpacing: "0.06em",
+                marginBottom: 24, letterSpacing: "0.06em",
               }}>
-                <Sparkles size={12} /> AI-POWERED HEALTH INTELLIGENCE
+                <Sparkles size={12} /> SEHATSATHI PLATFORM v2.4
               </motion.div>
 
-              {/* H1 */}
+              {/* H1 Headline */}
               <motion.h1
                 variants={fadeUp}
                 className="serif"
                 style={{
-                  fontSize: "clamp(40px, 5.5vw, 74px)",
-                  lineHeight: 1.07, color: "var(--text)", letterSpacing: "-0.03em",
+                  fontSize: "clamp(38px, 5.2vw, 68px)",
+                  lineHeight: 1.08, color: "var(--text)", letterSpacing: "-0.03em",
                 }}
               >
-                Understand your{" "}
-                <span className="shimmer-text">medical reports</span>
-                <br />
-                <em style={{ color: "var(--text-muted)", fontSize: "0.70em", fontStyle: "italic" }}>
-                  in plain, clinical clarity
-                </em>
+                India's AI-Powered <br />
+                <span className="shimmer-text">Healthcare Ecosystem</span>
               </motion.h1>
 
-              {/* Sub-headline */}
+              {/* Sub Heading */}
+              <motion.h3
+                variants={fadeUp}
+                style={{
+                  fontSize: "clamp(18px, 2.2vw, 24px)",
+                  fontWeight: 700, color: "var(--primary)",
+                  margin: "18px 0 12px", lineHeight: 1.4,
+                }}
+              >
+                From understanding your reports to connecting with trusted healthcare services — everything in one intelligent platform.
+              </motion.h3>
+
+              {/* Description */}
               <motion.p
                 variants={fadeUp}
-                style={{ fontSize: 16, color: "var(--text-secondary)", maxWidth: 480, margin: "22px 0 36px", lineHeight: 1.9 }}
+                style={{ fontSize: 15.5, color: "var(--text-secondary)", maxWidth: 520, margin: "0 0 32px", lineHeight: 1.8 }}
               >
-                Transform unstructured diagnostic readouts and complex blood test sheets into completely structured explanations — instantly and securely.
+                Get free AI medical report analysis, consult verified doctors, book hospital appointments, manage digital health records, find blood donors during emergencies, and take control of your healthcare journey with SehatSathi.
               </motion.p>
 
               {/* CTAs */}
